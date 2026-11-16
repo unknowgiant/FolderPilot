@@ -1,6 +1,6 @@
 # 文件管理多面手（FolderPilot）
 
-Windows 桌面双窗格文件管理器，Python + pywebview 单文件应用。**当前版本 1.3**。
+Windows 桌面多窗格文件管理器，Python + pywebview 单文件应用。**当前版本 1.3**。
 
 免安装、单文件 exe，内置 Everything 搜索引擎（无需另装），启动即用。
 
