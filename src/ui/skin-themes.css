@@ -1,20 +1,26 @@
 /* 文件管理多面手 — 主题皮肤（自动生成，请勿手改）
  * 由 src/tools/gen_skins.py 读取 tools/skins.json 生成。
  * 变量来源：每套主题的 bg / surface / text / accent 四个令牌，其余层次色
- * 由混色推导，正文与强调色对面板底色的对比度均已核到 WCAG AA 以上。
+ * 由混色推导。校验对象是「壁纸 → 蒙层 → 半透明面板」合成后的真实底色，
+ * 取最暗 2% / 中位 / 最亮 2% 三个带，正文都要过 WCAG AA 4.5:1。
+ * 字色由色板文字色按这条路逐级推远得到，换主题即换墨。
  */
 
 /* 01 云海初醒 · 风景 · 平均亮度 147 · 深字浅底 */
 html[data-skin="yunhai"]{
   --bg:#E7DCCA; --panel:#FFFFFF; --panel2:#F2ECE2; --panel3:#E8DECD;
   --line:#E2E4E6; --line2:#CACDD0;
-  --tx:#22303C; --tx2:#646E76; --tx3:#959CA1;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#22303C; --tx2:#414D57; --tx3:#57626B;
+  --tx-halo:0 1px 2px rgba(255,255,255,0.23);
   --acc:#9A6E38; --acc-d:#845F30; --acc-fill:#C08A46; --acc-fill-d:#A9793E; --acc-ink:#141414;
   --acc-soft:#F5ECE1; --sel:#ECDCC8; --hover:#FBF7F2;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(17,24,30,.16); --shadow-s:0 4px 16px rgba(17,24,30,.12);
-  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.38;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:55%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#C08A46,#9A6E38);
@@ -27,19 +33,25 @@ html[data-skin="yunhai"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#E7DCCA 0%,#F2ECE2 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#E7DCCA 0%,#F2ECE2 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 02 星河入梦 · 风景 · 平均亮度 31 · 浅字深底 */
 html[data-skin="xinghe"]{
   --bg:#0A1424; --panel:#16233A; --panel2:#232F45; --panel3:#2D394E;
   --line:#2D394E; --line2:#454F61;
-  --tx:#E9F0F8; --tx2:#AAB2BF; --tx3:#7B8595;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#E9F0F8; --tx2:#AAB2BF; --tx3:#8C96A4;
+  --tx-halo:0 1px 2px rgba(0,0,0,0.21);
   --acc:#80A7DC; --acc-d:#8DB0E0; --acc-fill:#7FA6DC; --acc-fill-d:#8EB1E0; --acc-ink:#141414;
   --acc-soft:#2B3D5A; --sel:#384D6E; --hover:#20304A;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --plate-rgb:22 35 58; --plate-a:0.48; --plate-top-a:0.24;
+  --plate-rgb:22 35 58; --plate-a:0.48; --plate-top-a:0.28;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:25%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#7FA6DC,#80A7DC);
@@ -52,19 +64,25 @@ html[data-skin="xinghe"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#0A1424 0%,#232F45 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#0A1424 0%,#232F45 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 03 湖畔微风 · 风景 · 平均亮度 183 · 深字浅底 */
 html[data-skin="hupan"]{
   --bg:#EFEDE2; --panel:#FFFFFF; --panel2:#F6F5EF; --panel3:#F0EEE3;
   --line:#E3E3E3; --line2:#CCCCCB;
-  --tx:#2A2B26; --tx2:#6A6B67; --tx3:#999997;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#2A2B26; --tx2:#61625E; --tx3:#777774;
+  --tx-halo:none;
   --acc:#89734B; --acc-d:#766340; --acc-fill:#C7A76C; --acc-fill-d:#AF935F; --acc-ink:#141414;
   --acc-soft:#F6F1E7; --sel:#EEE5D3; --hover:#FBF9F5;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(21,22,19,.16); --shadow-s:0 4px 16px rgba(21,22,19,.12);
   --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:10%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#C7A76C,#89734B);
@@ -77,19 +95,25 @@ html[data-skin="hupan"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#EFEDE2 0%,#F6F5EF 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#EFEDE2 0%,#F6F5EF 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 04 墨色千山 · 国风 · 平均亮度 230 · 深字浅底 */
 html[data-skin="mose"]{
   --bg:#F4F1E8; --panel:#FFFFFF; --panel2:#F9F7F2; --panel3:#F5F2E9;
   --line:#E1E1E1; --line2:#C9C9C8;
-  --tx:#1C1C1B; --tx2:#60605F; --tx3:#929292;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#1C1C1B; --tx2:#60605F; --tx3:#777776;
+  --tx-halo:none;
   --acc:#A5332A; --acc-d:#8E2C24; --acc-fill:#A7342A; --acc-fill-d:#932E25; --acc-ink:#FFFFFF;
   --acc-soft:#F1DFDD; --sel:#E5C2BF; --hover:#F9F1F0;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(14,14,14,.16); --shadow-s:0 4px 16px rgba(14,14,14,.12);
   --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:10%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#A7342A,#A5332A);
@@ -102,19 +126,25 @@ html[data-skin="mose"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#F4F1E8 0%,#F9F7F2 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#F4F1E8 0%,#F9F7F2 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 05 竹影清风 · 国风 · 平均亮度 186 · 深字浅底 */
 html[data-skin="zhuying"]{
   --bg:#EFEDE7; --panel:#FFFFFF; --panel2:#F6F5F2; --panel3:#F0EEE8;
   --line:#E3E4E5; --line2:#CCCECF;
-  --tx:#2A3335; --tx2:#6A7072; --tx3:#999D9E;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#2A3335; --tx2:#485051; --tx3:#555C5D;
+  --tx-halo:0 1px 2px rgba(255,255,255,0.21);
   --acc:#637C65; --acc-d:#556B57; --acc-fill:#7C9B7E; --acc-fill-d:#6D886F; --acc-ink:#141414;
   --acc-soft:#EAEFEA; --sel:#D8E1D8; --hover:#F6F8F6;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(21,26,26,.16); --shadow-s:0 4px 16px rgba(21,26,26,.12);
-  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.44;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:75%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#7C9B7E,#637C65);
@@ -127,19 +157,25 @@ html[data-skin="zhuying"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#EFEDE7 0%,#F6F5F2 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#EFEDE7 0%,#F6F5F2 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 06 青花山河 · 国风 · 平均亮度 202 · 深字浅底 */
 html[data-skin="qinghua"]{
   --bg:#F3F5F4; --panel:#FFFFFF; --panel2:#F8FAF9; --panel3:#F4F6F5;
   --line:#E1E4EA; --line2:#C7CDD8;
-  --tx:#16305C; --tx2:#5C6E8D; --tx3:#8F9CB1;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#16305C; --tx2:#405579; --tx3:#4E6283;
+  --tx-halo:0 1px 2px rgba(255,255,255,0.21);
   --acc:#2C4F87; --acc-d:#264474; --acc-fill:#A8C1D9; --acc-fill-d:#94AABF; --acc-ink:#141414;
   --acc-soft:#F1F5F9; --sel:#E5ECF4; --hover:#F9FBFC;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(11,24,46,.16); --shadow-s:0 4px 16px rgba(11,24,46,.12);
-  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.34;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:50%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#A8C1D9,#687887);
@@ -152,19 +188,25 @@ html[data-skin="qinghua"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#F3F5F4 0%,#F8FAF9 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#F3F5F4 0%,#F8FAF9 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 07 红日东方 · 红色 · 平均亮度 60 · 浅字深底 */
 html[data-skin="hongri"]{
   --bg:#331C18; --panel:#3A1E19; --panel2:#452A26; --panel3:#4E3430;
   --line:#4E3430; --line2:#614B47;
-  --tx:#F6E7D2; --tx2:#BEAB9A; --tx3:#947E72;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#F8EDDD; --tx2:#CEBFB2; --tx3:#BBAB9E;
+  --tx-halo:0 1px 2px rgba(0,0,0,0.22);
   --acc:#EFA361; --acc-d:#F1AC71; --acc-fill:#EFA25F; --acc-fill-d:#F1AD72; --acc-ink:#141414;
   --acc-soft:#5E3827; --sel:#74482F; --hover:#4C2B20;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --plate-rgb:58 30 25; --plate-a:0.48; --plate-top-a:0.24;
+  --plate-rgb:58 30 25; --plate-a:0.48; --plate-top-a:0.48;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:75%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#EFA25F,#EFA361);
@@ -177,19 +219,25 @@ html[data-skin="hongri"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#331C18 0%,#452A26 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#331C18 0%,#452A26 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 08 赤诚 · 红色 · 平均亮度 31 · 浅字深底 */
 html[data-skin="chicheng"]{
   --bg:#130A0B; --panel:#1E1113; --panel2:#2A1E20; --panel3:#34292B;
   --line:#34292B; --line2:#4B4142;
-  --tx:#EAD8B9; --tx2:#AD9C87; --tx3:#807163;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#FCFAF5; --tx2:#D4D0CC; --tx3:#BEB8B6;
+  --tx-halo:0 1px 2px rgba(0,0,0,0.23);
   --acc:#C9A56B; --acc-d:#CEAE7A; --acc-fill:#C8A46A; --acc-fill-d:#CFAF7C; --acc-ink:#141414;
   --acc-soft:#402E24; --sel:#54402F; --hover:#2F201C;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --plate-rgb:30 17 19; --plate-a:0.48; --plate-top-a:0.24;
+  --plate-rgb:30 17 19; --plate-a:0.5; --plate-top-a:0.5;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:80%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#C8A46A,#C9A56B);
@@ -202,19 +250,25 @@ html[data-skin="chicheng"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#130A0B 0%,#2A1E20 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#130A0B 0%,#2A1E20 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 09 窑洞灯火 · 复古 · 平均亮度 38 · 浅字深底 */
 html[data-skin="yaodong"]{
   --bg:#15202E; --panel:#1C2836; --panel2:#283441; --panel3:#333E4A;
   --line:#333E4A; --line2:#49535E;
-  --tx:#F3E5C9; --tx2:#B2AC9D; --tx3:#83837D;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#FDFBF7; --tx2:#CCCDCD; --tx3:#B5B8BA;
+  --tx-halo:0 1px 2px rgba(0,0,0,0.20);
   --acc:#E2AF5D; --acc-d:#E5B76D; --acc-fill:#E2AE5B; --acc-fill-d:#E5B86F; --acc-ink:#141414;
   --acc-soft:#44433D; --sel:#5B5342; --hover:#30353A;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --plate-rgb:28 40 54; --plate-a:0.48; --plate-top-a:0.24;
+  --plate-rgb:28 40 54; --plate-a:0.68; --plate-top-a:0.68;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:90%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#E2AE5B,#E2AF5D);
@@ -227,19 +281,25 @@ html[data-skin="yaodong"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#15202E 0%,#283441 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#15202E 0%,#283441 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* 10 实事求是 · 复古 · 平均亮度 72 · 浅字深底 */
 html[data-skin="shishi"]{
   --bg:#3B2E23; --panel:#4A3B2E; --panel2:#544639; --panel3:#5C4F43;
   --line:#5C4F43; --line2:#6E6258;
-  --tx:#F2EADB; --tx2:#C0B5A7; --tx3:#9B8F81;
+  /* 字色：由色板文字色按真实合成底色逐级推远得到，换主题即换墨 */
+  --tx:#FDFCFA; --tx2:#CFCAC5; --tx3:#BDB7B1;
+  --tx-halo:0 1px 2px rgba(0,0,0,0.21);
   --acc:#C6A08A; --acc-d:#CCAA96; --acc-fill:#9C5B36; --acc-fill-d:#A86F4E; --acc-ink:#FFFFFF;
   --acc-soft:#5A4130; --sel:#644531; --hover:#523E2F;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --plate-rgb:74 59 46; --plate-a:0.48; --plate-top-a:0.24;
+  --plate-rgb:74 59 46; --plate-a:0.58; --plate-top-a:0.58;
   /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  /* 滑杆下限：再薄下去这层墨就压不住壁纸了，界面按 --plate-min 卡住 */
+  --plate-min:75%;
   --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
   --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#9C5B36,#C6A08A);
@@ -252,6 +312,8 @@ html[data-skin="shishi"][data-wallpaper="0"]{
   --app-bg:linear-gradient(180deg,#3B2E23 0%,#544639 100%);
   --wall-img:none;
   --wall-scrim:linear-gradient(180deg,#3B2E23 0%,#544639 100%);
+  /* 没有壁纸时底面就是实色，字色回到实色校验用的墨 */
+  --tx-halo:none;
 }
 
 /* ---------- 通用钩子：壁纸与玻璃 ---------- */
@@ -269,6 +331,10 @@ html[data-skin]:not([data-skin="default"]) body::before{
 html[data-skin]:not([data-skin="default"]) body::after{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:var(--wall-scrim,none)}
+/* 文字光晕：壁纸是照片，字底下既有亮丝也有暗影，一层反差色描边让笔画
+   在任何一块高光上都立得住。深色主题给暗影，浅色主题给亮边，alpha 由
+   生成器按最薄处的余量算，够安全时就是 transparent。 */
+body{text-shadow:var(--tx-halo,none)}
 .pane{background:var(--pane-bg,var(--panel))}
 .topbar,.sidebar,.statusbar{background:var(--chrome,var(--panel))}
 html[data-skin]:not([data-skin="default"]) .topbar,

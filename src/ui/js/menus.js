@@ -2,7 +2,7 @@
 import { api, APP_META } from './api.js';
 import { S, tab, selectedPaths, saveState, applyTheme, applySkin, applyDensity,
   applyColWidths, applyPaneRatio, setCols, DEFAULT_COLW,
-  SKINS, currentSkin } from './store.js';
+  SKINS, currentSkin, skinFloor } from './store.js';
 import { renderPane, renderPanes, renderSidebar, renderStatus } from './view.js';
 import * as A from './actions.js';
 import { $, $$, esc, fmtSize, fmtDate, basename, dirname, toast, COLORS, COLOR_NAMES,
@@ -10,6 +10,11 @@ import { $, $$, esc, fmtSize, fmtDate, basename, dirname, toast, COLORS, COLOR_N
 
 let ctx = null;
 export function closeCtx() { if (ctx) { ctx.remove(); ctx = null; } }
+
+// 不透明度读数：拖到该主题的可读下限时点明，免得以为滑杆卡住了
+function opLabel(v, floor) {
+  return v <= floor && floor > 0 ? `${v}%（可读下限）` : `${v}%`;
+}
 
 function showCtx(x, y, items) {
   closeCtx();
@@ -290,13 +295,14 @@ export function skinModal() {
       <label class="sk-switch"><input type="checkbox" id="sk-wall">显示壁纸</label>
       <label class="sk-range" id="sk-op-wrap">工作区不透明度
         <input type="range" id="sk-op" min="0" max="100" step="5" value="100"
-          title="100% 为该主题的默认厚度；数值越小，面板越透、主题图越清楚（文字也会越靠壁纸）">
+          title="100% 为该主题的默认厚度；越小面板越透、主题图越清楚。拖到底会停在「可读下限」——再薄字就压不住壁纸的高光了">
         <span class="sk-op-v" id="sk-op-v">100%</span></label>
       <span class="sk-note" id="sk-note"></span>
     </div>
     <div class="skin-grid">${SKINS.map(card).join('')}</div>
     <div class="skin-tip">共 ${SKINS.length - 1} 套主题，点一下即时生效，可以来回对比；窗口关闭后自动记住。
-      每套主题自带深浅（深字浅底或浅字深底），选中后按它自己的底色渲染，文字对比度已按 WCAG AA 核对。</div>`,
+      每套主题自带一副字色：按它自己的壁纸、蒙层与面板厚度现算，正文、次要信息、提示文字
+      分别核到 WCAG AA 的 4.5 / 3.6 / 2.8，所以换主题时字色会跟着一起换，不会出现「字压在图上」。</div>`,
     `<button class="btn" data-reset>恢复默认</button><button class="btn primary" data-done>完成</button>`,
     (m, close) => {
       m.querySelector('.modal').classList.add('wide');
@@ -312,16 +318,20 @@ export function skinModal() {
         w.checked = S.cfg.skin_wallpaper !== false;
         w.disabled = currentSkin() === 'default';
         w.closest('.sk-switch').style.opacity = w.disabled ? .45 : 1;
-        // 工作面不透明度滑杆：默认皮肤没有壁纸，关掉壁纸时也无意义
-        const op = Math.max(0, Math.min(100, Number(S.cfg.skin_surface ?? 100)));
+        // 工作面不透明度滑杆：默认皮肤没有壁纸，关掉壁纸时也无意义。
+        // 下限由主题决定 —— 再薄下去这层墨就压不住壁纸的高光，拖到底也只会停在那里。
+        const floor = skinFloor();
+        const op = Math.max(floor, Math.min(100, Number(S.cfg.skin_surface ?? 100)));
         const rng = m.querySelector('#sk-op');
+        rng.min = floor;
         rng.value = op;
-        m.querySelector('#sk-op-v').textContent = op + '%';
+        m.querySelector('#sk-op-v').textContent = opLabel(op, floor);
         const off = w.disabled || !w.checked;
         rng.disabled = off;
         const wrap = m.querySelector('#sk-op-wrap');
         wrap.style.opacity = off ? .45 : 1;
-        wrap.title = off ? '先打开「显示壁纸」' : '';
+        wrap.title = off ? '先打开「显示壁纸」'
+          : (floor > 0 ? `可读下限 ${floor}%：再薄字就看不清了` : '');
       };
       m.querySelectorAll('.skin-card').forEach(c => {
         c.onclick = () => {
@@ -344,8 +354,11 @@ export function skinModal() {
       };
       // 拖动即时预览：只改工作面那层的 alpha 与模糊，不重新算色、不重排
       m.querySelector('#sk-op').oninput = e => {
-        S.cfg.skin_surface = Number(e.target.value);
-        m.querySelector('#sk-op-v').textContent = e.target.value + '%';
+        const floor = skinFloor();
+        const v = Math.max(floor, Math.min(100, Number(e.target.value)));
+        e.target.value = v;
+        S.cfg.skin_surface = v;
+        m.querySelector('#sk-op-v').textContent = opLabel(v, floor);
         applySkin(); saveState();
       };
       m.querySelector('[data-reset]').onclick = () => {

@@ -113,10 +113,14 @@ skip_dir = {'_build', '_build_setup', '__pycache__', 'real_cfg', '历史版本',
             '_orig', '_engine_probe'}
 skip_file = {'.server_url', '.real_server_url', 'ui.log', 'selftest.json',
              'engine_selftest.json', '.release.json', 'setup_wizard.png'}
+
 # 根目录里历史遗留的「名称 + 版本号」产物不进交付包（当期两个 exe 除外）
 import re as _re
 _stale = _re.compile(r'^' + _re.escape(PROJECT_CODE) + r' \d+(\.\d+)*.*\.(exe|zip)$', _re.I)
 _keep = {EXE_NAME, SETUP_NAME}
+# 测试截图不进交付包：几十张 PNG 能把包撑大 20MB，而结论都写在同名 json 里。
+# 只留真机（WebView2）截图 —— 那是 Chrome 里复现不出来的那部分证据。
+_keep_png = _re.compile(r'^real_.+\.png$')
 n = 0
 # 包内根目录用项目名（不带版本号），避免工程目录名还挂着旧版本号时把
 # 带旧版本号的陈旧路径打进交付包。
@@ -125,6 +129,8 @@ with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
         dirs[:] = [d for d in dirs if d not in skip_dir]
         for f in fs:
             if f in skip_file or f.endswith('.pyc'):
+                continue
+            if f.lower().endswith('.png') and not _keep_png.match(f):
                 continue
             if _stale.match(f) and f not in _keep:
                 continue

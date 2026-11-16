@@ -140,20 +140,41 @@ const wallOp = await page.evaluate(() =>
 check('wallpaper.original', Math.abs(parseFloat(wallOp) - 1) < 0.02, wallOp);
 
 const paneFull = alphaOf((await probe()).paneColor);
-await page.locator('#sk-op').fill('40');
+// 1.8 起滑杆有「可读下限」：再薄下去字就压不住壁纸高光，min 由主题决定
+const floorPct = await page.evaluate(() => +document.querySelector('#sk-op').min);
+check('surfaceopacity.floor', floorPct > 0 && floorPct <= 100, `下限 ${floorPct}%`);
+const midPct = Math.min(100, floorPct + 20);
+await page.evaluate(v => {
+  const r = document.querySelector('#sk-op');
+  r.value = String(v);
+  r.dispatchEvent(new Event('input', {bubbles: true}));
+}, midPct);
 await page.waitForTimeout(240);
-const p40 = await probe();
-const p40label = (await page.textContent('#sk-op-v')).trim();
-const p40alpha = alphaOf(p40.paneColor);
+const pMid = await probe();
+const pMidLabel = (await page.textContent('#sk-op-v')).trim();
+const pMidAlpha = alphaOf(pMid.paneColor);
 check('surfaceopacity.slider',
-  Math.abs(p40alpha - paneFull * 0.4) < 0.04 && p40label === '40%',
-  `${paneFull} → ${p40alpha} / ${p40label}`);
+  Math.abs(pMidAlpha - paneFull * midPct / 100) < 0.04 && pMidLabel === midPct + '%',
+  `${paneFull} → ${pMidAlpha} / ${pMidLabel}`);
+// 拖到下限以下必须被夹住 —— 这是「字看不清」的防线
+const clamped = await page.evaluate(() => {
+  const r = document.querySelector('#sk-op');
+  r.value = '1';
+  r.dispatchEvent(new Event('input', {bubbles: true}));
+  return {val: +r.value, min: +r.min, k: getComputedStyle(document.documentElement).getPropertyValue('--plate-k').trim()};
+});
+check('surfaceopacity.clamped', clamped.val === clamped.min,
+  `拖到 1% 被夹到 ${clamped.val}%（下限 ${clamped.min}%，--plate-k ${clamped.k}）`);
 // 模糊要跟着厚度一起减，否则薄面板上仍是糊成一片的风景
-const blur40 = await page.evaluate(() => getComputedStyle(document.querySelector('.pane')).backdropFilter);
-check('surfaceopacity.blur', /blur\((\d+(\.\d+)?)px\)/.test(blur40)
-  && parseFloat(blur40.match(/blur\((\d+(\.\d+)?)px\)/)[1]) < 6, blur40);
-await page.screenshot({path: path.join(OUT, 'skin_surface40.png')});
-await page.locator('#sk-op').fill('100');
+const blurMid = await page.evaluate(() => getComputedStyle(document.querySelector('.pane')).backdropFilter);
+check('surfaceopacity.blur', /blur\((\d+(\.\d+)?)px\)/.test(blurMid)
+  && parseFloat(blurMid.match(/blur\((\d+(\.\d+)?)px\)/)[1]) < 10, blurMid);
+await page.screenshot({path: path.join(OUT, 'skin_surface_floor.png')});
+await page.evaluate(() => {
+  const r = document.querySelector('#sk-op');
+  r.value = '100';
+  r.dispatchEvent(new Event('input', {bubbles: true}));
+});
 await page.waitForTimeout(220);
 const paneBack = alphaOf((await probe()).paneColor);
 check('surfaceopacity.reset', Math.abs(paneBack - paneFull) < 0.02, `${paneBack}`);

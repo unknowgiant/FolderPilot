@@ -66,14 +66,25 @@ export function currentSkin() {
 }
 export function currentSkinOf() { return skinOf(currentSkin()); }
 
+// 该主题的可读下限（%）：面板薄到这个程度以下，字色就压不住壁纸上的高光了。
+// 每套主题的壁纸明暗不同，下限也不同 —— 由 gen_skins.py 按真实合成底色算好。
+export function skinFloor() {
+  const s = currentSkinOf();
+  if (s.key === 'default' || S.cfg.skin_wallpaper === false) return 0;
+  return Math.max(0, Math.min(100, Number(s.pf ?? 0)));
+}
+
 export function applySkin() {
   const s = currentSkinOf();
   const r = document.documentElement;
   r.dataset.skin = s.key;
   r.dataset.wallpaper = S.cfg.skin_wallpaper === false ? '0' : '1';
-  // 工作面不透明度：100 = 该主题的默认厚度，0 = 面板全透、只剩壁纸与文字。
-  // 壁纸那一层始终按原图显示，所以「看不到主题图」时调这里才有用。
-  const op = Math.max(0, Math.min(100, Number(S.cfg.skin_surface ?? 100)));
+  // 工作面不透明度：100 = 该主题的默认厚度，越小面板越透、壁纸越清楚。
+  // 但不能一路透到底：低于该主题的可读下限时，字会淹没在壁纸的高光里
+  // （红色系主题尤其明显），所以在这里夹一次，顺手把存下来的旧值纠正回来。
+  const floor = skinFloor();
+  const op = Math.max(floor, Math.min(100, Number(S.cfg.skin_surface ?? 100)));
+  if (Number(S.cfg.skin_surface) !== op) S.cfg.skin_surface = op;
   const k = op / 100;
   r.style.setProperty('--plate-k', k.toFixed(2));
   // 模糊跟着厚度走：面板越薄越要看清图，10px 糊在薄面板上等于把风景抹平
@@ -82,7 +93,7 @@ export function applySkin() {
   if (b) {
     b.innerHTML = '<svg class="i"><use href="#ic-palette"/></svg>';
     b.title = s.key === 'default' ? '界面皮肤：默认（晨雾蓝）'
-      : `界面皮肤：${s.name} · ${s.cat}`;
+      : `界面皮肤：${s.name} · ${s.cat}（可读下限 ${floor}%）`;
   }
 }
 

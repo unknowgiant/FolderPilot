@@ -20,7 +20,7 @@
 """
 from __future__ import annotations
 
-APP_VERSION = "1.7"
+APP_VERSION = "1.8"
 APP_ID = "FileManagerMulti"
 PROJECT_CODE = "文件管理多面手"
 
