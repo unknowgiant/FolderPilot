@@ -2,7 +2,7 @@
 ============================================================
 项目编号：文件管理多面手 1.4
 版本号  ：1.4（详见「更新日志.txt」，版本规则见 fmp/version.py）
-构建时间：2026-11-16 12:33:33
+构建时间：2026-11-16 12:36:29
 构建环境：Python 3.14.10 / pywebview 6.2.1 / PyInstaller 6.22.3
 运行环境：Windows 10 1903+ / Windows 11 64 位 + WebView2
 命令通道：本地 HTTP POST /api + 每次启动随机 token（不依赖 js_api 注入）
@@ -13,7 +13,7 @@
   文件管理多面手 1.4-Setup.exe                28,889,083 B  SHA256 472F9C99F9E83DEA44820383417CE9900E8DC7F94F1DB69A30F260763438B364
   使用说明.txt                                 23,343 B  SHA256 FA4D886A63F9F63F3D67BBE236C19CA268081C512CCE7835A846860E7853C2E3
   更新日志.txt                                 15,368 B  SHA256 855C01BFCC78B6E11630CD376C11C43D07BB279559F143F3FCF0DEEC834BEB49
-  架构与修复说明.txt                              45,485 B  SHA256 5513458C8C3AE67EF1036F0E78648309EDF7F61BC845BDB6A5587DC09AA0BF46
+  架构与修复说明.txt                              46,264 B  SHA256 A497537E6AEFF26C2152FD202CDB8820039CA85198B7AA160F0D2A376F5DAD5B
   启动-文件管理多面手.bat                              701 B  SHA256 550BAF819D60471BA29730ABCA331222C1313D932638A0FA1C2CA3650C884550
   src\assets\app_icon.ico                  31,595 B  SHA256 36AE4ADFBB47B7FA0C43CA0900A583040CAFF4CEC672CA8F9F8C160128095622
   src\main.py                              20,303 B  SHA256 3F70A29C8E8A04F3D6D679456847F97F3CAC7E38AEF3A65F1511CF8280D3950A
