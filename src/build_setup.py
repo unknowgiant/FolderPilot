@@ -15,6 +15,8 @@ ROOT = os.path.dirname(SRC)
 sys.path.insert(0, SRC)
 
 from fmp.version import APP_VERSION, EXE_NAME, SETUP_NAME  # noqa: E402
+sys.path.insert(0, os.path.join(SRC, "tools"))
+import version_file  # noqa: E402
 
 BUILD = os.path.join(ROOT, "_build_setup")
 DIST = os.path.join(BUILD, "dist")
@@ -42,10 +44,14 @@ def main():
             print("缺少待打包文件：", src)
             return 1
         args += ["--add-data", src + os.pathsep + dest]
+    vfile = version_file.write(os.path.join(BUILD, "version_info.txt"),
+                               APP_VERSION, SETUP_NAME,
+                               description="安装程序（内嵌便携版主程序）")
     cmd = [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
         "--onefile", "--windowed", "--name", "FileManagerMultiSetup",
         "--icon", os.path.join(SRC, "assets", "app_icon.ico"),
+        "--version-file", vfile,
         "--distpath", DIST, "--workpath", os.path.join(BUILD, "work"),
         "--specpath", BUILD,
         "--exclude-module", "webview", "--exclude-module", "clr",

@@ -36,7 +36,8 @@ sys.path.insert(0, TOOLS)
 sys.path.insert(0, SRC)
 
 import release_guard  # noqa: E402
-from fmp.version import APP_VERSION, EXE_NAME, SETUP_NAME  # noqa: E402
+from fmp.version import (APP_VERSION, ASSET_PORTABLE, ASSET_SETUP,  # noqa: E402
+                         EXE_NAME, SETUP_NAME)
 
 OWNER, REPO = "unknowgiant", "FolderPilot"
 DEFAULT_WORK = r"E:\软件开发\_publish_FolderPilot"
@@ -173,10 +174,12 @@ def release_body(tok: str) -> str:
     head = ("## 文件管理多面手 %s\n\n"
             "Windows 多窗格文件管理器，免安装单文件。下载后双击即可运行"
             "（Win10 1903+ / Win11 64 位，需 WebView2）。\n\n"
+            "版本号不写在文件名里：下载后右键 → 属性 → 详细信息，"
+            "「文件版本」即本版号；程序内标题栏与「关于」也能看到。\n\n"
             "| 下载 | 说明 |\n| --- | --- |\n"
-            "| `FolderPilot-%s-portable.exe` | 便携版，不写注册表 |\n"
-            "| `FolderPilot-%s-Setup.exe` | 安装版，可就地升级 |\n\n"
-            % (APP_VERSION, APP_VERSION, APP_VERSION))
+            "| `%s` | 便携版，不写注册表 |\n"
+            "| `%s` | 安装版，可就地升级（安装时会显示版本对比） |\n\n"
+            % (APP_VERSION, ASSET_PORTABLE, ASSET_SETUP))
     return head + section
 
 
@@ -233,8 +236,7 @@ def publish(work: str, dry: bool, tok: str) -> None:
     print("[4/4] 上传安装包")
     up = rel["upload_url"].split("{")[0]
     have = {a["name"] for a in rel.get("assets", [])}
-    plan = [(exe, "FolderPilot-%s-portable.exe" % ver),
-            (setup, "FolderPilot-%s-Setup.exe" % ver)]
+    plan = [(exe, ASSET_PORTABLE), (setup, ASSET_SETUP)]
     for path, name in plan:
         if name in have:
             print("  已存在，跳过：", name)

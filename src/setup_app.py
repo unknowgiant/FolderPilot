@@ -3,6 +3,9 @@
 
 单文件 Setup.exe 内嵌便携版主程序与说明文档；安装后写入 HKCU 卸载项，
 可在 Windows「设置 → 应用」中直接卸载。卸载入口为主程序的 --uninstall 参数。
+
+向导首屏就把「即将安装的版本」和「本机已有的版本」并排摆出来（蓝色 = 要装的，
+灰色 = 原有的），动手前一眼看清这是全新安装、升级还是降级。
 """
 from __future__ import annotations
 
@@ -21,15 +24,24 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fmp.version import (APP_ID, APP_TITLE, APP_VERSION, DATA_DIR_DISPLAY,  # noqa: E402
-                         EXE_NAME, LEGACY_UNINSTALL_PREFIX, PROJECT_CODE,
-                         SHORTCUT_NAME, UNINSTALL_KEY)
+from fmp.version import (APP_ID, APP_LABEL, APP_TITLE, APP_VERSION,  # noqa: E402
+                         DATA_DIR_DISPLAY, EXE_NAME, LEGACY_UNINSTALL_PREFIX,
+                         PROJECT_CODE, SHORTCUT_NAME, UNINSTALL_KEY)
+from fmp import installed  # noqa: E402
 
 # 安装目录不带版本号：同一台机器上就地升级，只保留一份安装
 INSTALL_ROOT_NAME = PROJECT_CODE
 
 BG = "#F7F9FC"
 ACC = "#4A7FD0"
+ACC_BG = "#EAF2FE"
+ACC_TXT = "#3D6BB4"
+MUT_BG = "#F1F3F7"
+MUT_BORDER = "#D2DAE6"
+MUT_FG = "#5A6B80"
+MUT_FG2 = "#7C8899"
+OK = "#2F8F63"
+WARN = "#C0503C"
 TXT = "#26364C"
 TXT2 = "#61758E"
 
@@ -221,7 +233,13 @@ def cleanup_previous_versions(install_dir, keep_exe, keep_links=()):
     return removed
 
 
-def perform_install(install_dir, want_desktop=True, want_start=True, progress=None):
+def perform_install(install_dir, want_desktop=True, want_start=True, progress=None,
+                    cleanup=True):
+    """释放文件并注册卸载项。
+
+    cleanup=False 供自动化测试使用：测试装到临时目录时不能顺手把本机真正
+    安装的快捷方式和版本目录清掉（否则跑一遍测试，用户桌面图标就没了）。
+    """
     def step(msg, pct):
         if progress:
             progress(msg, pct)
@@ -256,8 +274,11 @@ def perform_install(install_dir, want_desktop=True, want_start=True, progress=No
                 pass
     step("正在创建快捷方式…", 78)
     shortcuts = make_shortcuts(dst_exe, install_dir, want_desktop, want_start)
-    step("正在清理旧版本…", 86)
-    removed = cleanup_previous_versions(install_dir, dst_exe, shortcuts)
+    if cleanup:
+        step("正在清理旧版本…", 86)
+        removed = cleanup_previous_versions(install_dir, dst_exe, shortcuts)
+    else:
+        removed = {"exe": [], "lnk": [], "reg": [], "dir": []}
     step("正在注册卸载信息…", 90)
     write_uninstall_entry(install_dir, dst_exe, shortcuts, os.path.getsize(dst_exe) / 1024)
     step("安装完成", 100)
@@ -272,9 +293,10 @@ def silent_install():
         if a.startswith("--dir="):
             d = a[6:].strip('"')
     no_sc = "--no-shortcuts" in sys.argv
+    no_clean = "--no-cleanup" in sys.argv
     result = {}
     try:
-        result = perform_install(d, not no_sc, not no_sc)
+        result = perform_install(d, not no_sc, not no_sc, cleanup=not no_clean)
         result["ok"] = True
     except Exception as ex:
         result = {"ok": False, "error": str(ex)}
@@ -294,7 +316,7 @@ class Wizard:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title(APP_TITLE + " 安装")
-        self.root.geometry("600x430")
+        self.root.geometry("620x648")
         self.root.resizable(False, False)
         self.root.configure(bg=BG)
         self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
@@ -313,9 +335,18 @@ class Wizard:
         style.configure("TCheckbutton", background=BG, font=("Microsoft YaHei UI", 10))
         style.configure("TProgressbar", troughcolor="#E9EFF8", background=ACC)
 
+        # 探测本机已有版本：只读，出错也不能挡住安装
+        try:
+            self.cmp = installed.compare(APP_VERSION)
+        except Exception:
+            self.cmp = installed.compare(APP_VERSION, {})
+
         head = tk.Frame(self.root, bg=ACC, height=76)
         head.pack(fill="x")
         head.pack_propagate(False)
+        badge = tk.Label(head, text="安装包 v" + APP_VERSION, bg="#3D6BB4", fg="white",
+                         font=("Microsoft YaHei UI", 9, "bold"), padx=10, pady=4)
+        badge.pack(side="right", padx=(0, 20), pady=24)
         tk.Label(head, text="◆", bg=ACC, fg="white", font=("Microsoft YaHei UI", 24)).pack(side="left", padx=(22, 12))
         box = tk.Frame(head, bg=ACC)
         box.pack(side="left", fill="y", pady=12)
@@ -324,17 +355,76 @@ class Wizard:
         tk.Label(box, text="双窗格文件管理 · Everything 全盘秒搜 · 本地数据不上传",
                  bg=ACC, fg="#DCE9FA", font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(2, 0))
 
+        # 按钮栏先 pack 到窗口底部：页面内容再多也不能把它挤出可视区
+        # （1.6 之前 page 用 expand=True 抢占全部空间，内容一多按钮就看不见了）
+        self.bar = tk.Frame(self.root, bg=BG)
+        self.bar.pack(side="bottom", fill="x", padx=24, pady=(6, 16))
+
         self.page = tk.Frame(self.root, bg=BG)
-        self.page.pack(fill="both", expand=True, padx=24, pady=16)
+        self.page.pack(fill="both", expand=True, padx=24, pady=(12, 0))
         self.page_install()
+
+    # ---------- 版本对比 ----------
+    def _ver_card(self, parent, tag, ver, sub, strong):
+        """一张版本卡：蓝底 = 即将安装，灰底 = 系统原有。"""
+        bg, border, fg, fg2 = ((ACC_BG, ACC, ACC, ACC_TXT) if strong
+                               else (MUT_BG, MUT_BORDER, MUT_FG, MUT_FG2))
+        card = tk.Frame(parent, bg=bg, highlightbackground=border,
+                        highlightthickness=1, bd=0)
+        card.pack(fill="x")
+        inner = tk.Frame(card, bg=bg)
+        inner.pack(fill="x", padx=14, pady=7)
+        tk.Label(inner, text=("v" + ver) if ver else "—", bg=bg, fg=fg,
+                 font=("Microsoft YaHei UI", 19, "bold")).pack(side="right", padx=(10, 2))
+        left = tk.Frame(inner, bg=bg)
+        left.pack(side="left", fill="x", expand=True)
+        tk.Label(left, text=tag, bg=bg, fg=fg2,
+                 font=("Microsoft YaHei UI", 8)).pack(anchor="w")
+        tk.Label(left, text=APP_TITLE, bg=bg, fg=fg,
+                 font=("Microsoft YaHei UI", 11, "bold")).pack(anchor="w")
+        if sub:
+            tk.Label(left, text=sub, bg=bg, fg=fg2,
+                     font=("Microsoft YaHei UI", 8), anchor="w",
+                     justify="left", wraplength=455).pack(anchor="w")
+        return card
+
+    def _version_block(self):
+        c = self.cmp
+        tk.Label(self.page, text="版本对比", bg=BG, fg=TXT,
+                 font=("Microsoft YaHei UI", 11, "bold")).pack(anchor="w")
+        tk.Label(self.page,
+                 text="蓝色是将要装进本机的，灰色是本机现在已有的；两者的差别就是这次安装带来的变化。",
+                 bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(2, 8))
+
+        self._ver_card(self.page, "即将安装", c["new"], "本次安装包内的版本", True)
+
+        arrow_fg = {"upgrade": OK, "same": ACC_TXT, "downgrade": WARN}.get(c["kind"], TXT2)
+        tk.Label(self.page, text="↓  " + c["arrow"], bg=BG, fg=arrow_fg,
+                 font=("Microsoft YaHei UI", 9, "bold")).pack(anchor="w", pady=(3, 3))
+
+        if c["old"]:
+            sub = "已安装于 " + (c["dir"] or "（注册表未记录位置）")
+            if c["how"] and c["how"] != "注册表":
+                sub += "（依据：" + c["how"] + "）"
+        else:
+            sub = "本机没有检测到已安装版本"
+        self._ver_card(self.page, "系统已有", c["old"], sub, False)
+
+        note_fg = {"upgrade": OK, "downgrade": WARN}.get(c["kind"], TXT2)
+        tk.Label(self.page, text=c["title"] + "：" + c["note"], bg=BG, fg=note_fg,
+                 font=("Microsoft YaHei UI", 9), wraplength=560, justify="left").pack(anchor="w", pady=(6, 0))
 
     def page_install(self):
         for w in self.page.winfo_children():
             w.destroy()
+        for w in self.bar.winfo_children():
+            w.destroy()
+        self._version_block()
+
         tk.Label(self.page, text="安装位置", bg=BG, fg=TXT,
-                 font=("Microsoft YaHei UI", 11, "bold")).pack(anchor="w")
-        tk.Label(self.page, text="安装到个人目录，无需管理员权限；不会写入系统目录或开机启动项。",
-                 bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(2, 10))
+                 font=("Microsoft YaHei UI", 11, "bold")).pack(anchor="w", pady=(12, 0))
+        tk.Label(self.page, text="装到个人目录，无需管理员权限；不写系统目录、不加开机启动项。",
+                 bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(2, 6))
         row = tk.Frame(self.page, bg=BG)
         row.pack(fill="x")
         self.dir_var = tk.StringVar(value=DEFAULT_DIR)
@@ -344,24 +434,25 @@ class Wizard:
 
         self.desk_var = tk.BooleanVar(value=True)
         self.start_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(self.page, text="创建桌面快捷方式", variable=self.desk_var,
-                        style="TCheckbutton").pack(anchor="w", pady=(16, 2))
-        ttk.Checkbutton(self.page, text="创建开始菜单快捷方式", variable=self.start_var,
-                        style="TCheckbutton").pack(anchor="w")
+        for text, var, pad in (("创建桌面快捷方式", self.desk_var, (10, 2)),
+                               ("创建开始菜单快捷方式", self.start_var, (0, 0))):
+            tk.Checkbutton(self.page, text=text, variable=var, bg=BG, fg=TXT,
+                           activebackground=BG, activeforeground=TXT,
+                           selectcolor="white", font=("Microsoft YaHei UI", 10),
+                           bd=0, highlightthickness=0, anchor="w").pack(anchor="w", pady=pad)
 
-        tk.Label(self.page, text="版本 " + APP_VERSION + " · Windows 10 / 11 64 位 · 依赖系统自带 WebView2",
-                 bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(18, 0))
+        tk.Label(self.page,
+                 text="Windows 10 / 11 64 位 · 依赖系统自带 WebView2 · 版本号可在程序内「关于」查看",
+                 bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(8, 0))
         self.status = tk.Label(self.page, text="", bg=BG, fg=ACC,
-                               font=("Microsoft YaHei UI", 9), wraplength=540, justify="left")
-        self.status.pack(anchor="w", pady=(6, 0))
+                               font=("Microsoft YaHei UI", 9), wraplength=560, justify="left")
+        self.status.pack(anchor="w", pady=(8, 0))
         self.prog = ttk.Progressbar(self.page, mode="determinate", maximum=100)
-        self.prog.pack(fill="x", pady=(6, 0))
+        self.prog_visible = False
 
-        bar = tk.Frame(self.root, bg=BG)
-        bar.pack(fill="x", padx=24, pady=(0, 18))
-        self.btn_cancel = ttk.Button(bar, text="取消", command=self.root.destroy)
+        self.btn_cancel = ttk.Button(self.bar, text="取消", command=self.root.destroy)
         self.btn_cancel.pack(side="right")
-        self.btn_install = ttk.Button(bar, text="立即安装", command=self.install)
+        self.btn_install = ttk.Button(self.bar, text="立即安装", command=self.install)
         self.btn_install.pack(side="right", padx=(0, 10))
 
     def browse(self):
@@ -380,6 +471,9 @@ class Wizard:
             return messagebox.showwarning("提示", "请选择安装目录", parent=self.root)
         self.btn_install.configure(state="disabled")
         self.btn_cancel.configure(state="disabled")
+        if not self.prog_visible:
+            self.prog.pack(fill="x", pady=(4, 0))
+            self.prog_visible = True
         threading.Thread(target=self.worker, args=(d,), daemon=True).start()
 
     def worker(self, install_dir):
@@ -401,19 +495,31 @@ class Wizard:
     def page_done(self):
         for w in self.page.winfo_children():
             w.destroy()
-        tk.Label(self.page, text="✓ 安装完成", bg=BG, fg="#2F8F63",
-                 font=("Microsoft YaHei UI", 16, "bold")).pack(anchor="w", pady=(12, 8))
+        c = self.cmp
+        title = {"upgrade": "✓ 升级完成", "same": "✓ 重装完成",
+                 "downgrade": "✓ 安装完成"}.get(c["kind"], "✓ 安装完成")
+        tk.Label(self.page, text=title, bg=BG, fg=OK,
+                 font=("Microsoft YaHei UI", 16, "bold")).pack(anchor="w", pady=(10, 4))
+        tk.Label(self.page, text=APP_LABEL, bg=BG, fg=ACC,
+                 font=("Microsoft YaHei UI", 13, "bold")).pack(anchor="w")
+        if c["old"]:
+            line = "本机原为 v%s，现已更新为 v%s；原有设置与暂存盘保持不变。" % (c["old"], c["new"])
+        else:
+            line = "本机此前未安装，已完成首次安装。"
+        tk.Label(self.page, text=line, bg=BG, fg=TXT,
+                 font=("Microsoft YaHei UI", 9), wraplength=560,
+                 justify="left").pack(anchor="w", pady=(4, 0))
         tk.Label(self.page, text="安装位置：" + os.path.dirname(self.installed_exe),
-                 bg=BG, fg=TXT, font=("Microsoft YaHei UI", 10), wraplength=540,
-                 justify="left").pack(anchor="w")
+                 bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9), wraplength=560,
+                 justify="left").pack(anchor="w", pady=(12, 0))
         tk.Label(self.page,
                  text="已在 Windows「设置 → 应用」中登记，可随时一键卸载。\n"
                       "个人数据保存在 " + DATA_DIR_DISPLAY + "，卸载不会删除。",
                  bg=BG, fg=TXT2, font=("Microsoft YaHei UI", 9), justify="left",
-                 wraplength=540).pack(anchor="w", pady=(14, 0))
+                 wraplength=560).pack(anchor="w", pady=(10, 0))
         self.run_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(self.page, text="立即运行 " + APP_TITLE,
-                        variable=self.run_var, style="TCheckbutton").pack(anchor="w", pady=(20, 0))
+                        variable=self.run_var, style="TCheckbutton").pack(anchor="w", pady=(18, 0))
         self.btn_install.configure(text="完成", state="normal", command=self.finish)
         self.btn_cancel.configure(state="normal", command=self.finish)
 

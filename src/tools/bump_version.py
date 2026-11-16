@@ -112,9 +112,9 @@ def check() -> int:
 
     problems = []
     print("当前版本：%s" % ver)
-    print("  窗口标题    %s" % APP_TITLE)
-    print("  便携版      %s" % EXE_NAME)
-    print("  安装版      %s" % SETUP_NAME)
+    print("  窗口标题    %s（不含版本号）" % APP_TITLE)
+    print("  便携版      %s（exe 属性里的文件版本 = %s）" % (EXE_NAME, ver))
+    print("  安装版      %s（安装向导显示版本对比）" % SETUP_NAME)
     print("  交付包      %s" % ZIP_NAME)
     print("  快捷方式    %s" % SHORTCUT_NAME)
     print("  数据目录    %%APPDATA%%\\FileManagerMulti\\%s" % DATA_SERIES)
@@ -136,7 +136,15 @@ def check() -> int:
         if re.search(r'class="brand-ver">\s*\d+\.\d+', html):
             problems.append("index.html 品牌处写死了版本号")
 
-    # 3) 全仓扫「名称 + 版本号」的硬编码（排除版本模块与更新日志）
+    # 3) 对外名字里不许出现版本号（版本号只进软件包：exe 属性、界面、安装向导）
+    for label, name in (("窗口标题", APP_TITLE), ("便携版", EXE_NAME),
+                        ("安装版", SETUP_NAME), ("交付包", ZIP_NAME),
+                        ("快捷方式", SHORTCUT_NAME)):
+        if re.search(r"\d", name):
+            problems.append("%s 名称里带了版本号，违反「序号不进名字」：%s"
+                            % (label, name))
+
+    # 4) 全仓扫「名称 + 版本号」的硬编码（排除版本模块与更新日志）
     for p in iter_files():
         try:
             text = open(p, encoding="utf-8", errors="ignore").read()

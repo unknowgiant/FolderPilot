@@ -6,8 +6,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARENT = os.path.dirname(ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'src'))
 
-from fmp.version import (APP_TITLE, APP_VERSION, EXE_NAME, SETUP_NAME, ZIP_NAME,
-                         PROJECT_CODE)  # noqa: E402
+from fmp.version import (APP_LABEL, APP_TITLE, APP_VERSION, EXE_NAME, SETUP_NAME,
+                         ZIP_NAME, PROJECT_CODE)  # noqa: E402
 
 
 def sha(p):
@@ -29,9 +29,9 @@ for f in ['.server_url', '.real_server_url']:
         pass
 
 info = []
-info.append(APP_TITLE + ' · 版本信息')
+info.append(APP_LABEL + ' · 版本信息')
 info.append('=' * 60)
-info.append('项目编号：' + APP_TITLE)
+info.append('项目名称：' + APP_TITLE + '（对外文件名不带版本号，序号只看「版本号」一行）')
 info.append('版本号  ：' + APP_VERSION + '（详见「更新日志.txt」，版本规则见 fmp/version.py）')
 info.append('构建时间：' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 info.append('构建环境：Python 3.14.10 / pywebview 6.2.1 / PyInstaller 6.22.3')
@@ -58,7 +58,9 @@ for name, path in [('后端自检', 'tests/output/backend_report.json'),
                    ('安装卸载测试', 'tests/output/install_report.json'),
                    ('真实窗口拖放链路', 'tests/output/drag_report.json'),
                    ('空格预览专项', 'tests/output/preview_report.json'),
-                   ('鼠标侧键导航', 'tests/output/mouse_nav_report.json')]:
+                   ('鼠标侧键导航', 'tests/output/mouse_nav_report.json'),
+                   ('安装版本对比', 'tests/output/installed_report.json'),
+                   ('安装向导界面', 'tests/output/setup_ui_report.json')]:
     fp = os.path.join(ROOT, path)
     if os.path.isfile(fp):
         d = json.load(open(fp, encoding='utf-8'))
@@ -110,7 +112,11 @@ zp = os.path.join(PARENT, ZIP_NAME)
 skip_dir = {'_build', '_build_setup', '__pycache__', 'real_cfg', '历史版本',
             '_orig', '_engine_probe'}
 skip_file = {'.server_url', '.real_server_url', 'ui.log', 'selftest.json',
-             'engine_selftest.json', '.release.json'}
+             'engine_selftest.json', '.release.json', 'setup_wizard.png'}
+# 根目录里历史遗留的「名称 + 版本号」产物不进交付包（当期两个 exe 除外）
+import re as _re
+_stale = _re.compile(r'^' + _re.escape(PROJECT_CODE) + r' \d+(\.\d+)*.*\.(exe|zip)$', _re.I)
+_keep = {EXE_NAME, SETUP_NAME}
 n = 0
 # 包内根目录用项目名（不带版本号），避免工程目录名还挂着旧版本号时把
 # 带旧版本号的陈旧路径打进交付包。
@@ -119,6 +125,8 @@ with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
         dirs[:] = [d for d in dirs if d not in skip_dir]
         for f in fs:
             if f in skip_file or f.endswith('.pyc'):
+                continue
+            if _stale.match(f) and f not in _keep:
                 continue
             full = os.path.join(base, f)
             z.write(full, os.path.join(PROJECT_CODE, os.path.relpath(full, ROOT)))

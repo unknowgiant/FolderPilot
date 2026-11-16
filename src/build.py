@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(SRC, "tools"))
 
 from fmp.version import APP_TITLE, APP_VERSION, EXE_NAME  # noqa: E402
 import release_guard  # noqa: E402
+import version_file  # noqa: E402
 
 BUILD = os.path.join(ROOT, "_build")
 DIST = os.path.join(BUILD, "dist")
@@ -33,10 +34,14 @@ def main():
         return 3
     for d in (BUILD, DIST):
         os.makedirs(d, exist_ok=True)
+    # 版本号写进 exe 属性（文件名本身不带版本，见 fmp/version.py 的命名规则）
+    vfile = version_file.write(os.path.join(BUILD, "version_info.txt"),
+                               APP_VERSION, EXE_NAME)
     cmd = [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
         "--onefile", "--windowed", "--name", NAME,
         "--icon", os.path.join(SRC, "assets", "app_icon.ico"),
+        "--version-file", vfile,
         "--distpath", DIST, "--workpath", os.path.join(BUILD, "work"),
         "--specpath", BUILD,
         "--add-data", os.path.join(SRC, "ui") + os.pathsep + "ui",

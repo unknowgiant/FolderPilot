@@ -269,7 +269,9 @@ def global_hotkey(win, title):
         while not SHUTDOWN.is_set():
             if u32.PeekMessageW(ctypes.byref(msg), None, 0, 0, PM_REMOVE):
                 if msg.message == WM_HOTKEY and msg.wParam == 1 and not SHUTDOWN.is_set():
-                    hwnd = u32.FindWindowW(None, title)
+                    # 标题不再带版本号，精确匹配即可；旧版本实例仍在跑时按
+                    # 进程窗口标题里的项目名兜底（_find_own_window）。
+                    hwnd = u32.FindWindowW(None, title) or _find_own_window(APP_ID)
                     if hwnd:
                         u32.ShowWindow(hwnd, 9)
                         u32.SetForegroundWindow(hwnd)
