@@ -378,6 +378,7 @@ async function boot() {
     if (!DEMO) await waitBridge();
     S.appInfo = await api('app.info');
     await loadState();
+    A.syncTrayBadge();   // 重启后徽标要反映配置里的实际条数
     const [d, sp, st] = await Promise.all([
       api('dir.drives'), api('dir.special'), api('search.status', {probe: true}),
     ]);

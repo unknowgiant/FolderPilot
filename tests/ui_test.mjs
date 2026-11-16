@@ -300,6 +300,60 @@ try {
     /110px/.test(restored.cols) && /146px/.test(restored.cols) &&
     restored.flag !== '1' && restored.wrap !== '1', JSON.stringify(restored));
 
+  // 8.5) 暂存盘：加入 / 去重 / 失效标记 / 清理 / 清空，顶栏计数必须同步
+  const trayBadge = async () => (await page.locator('#tray-count').innerText()).trim();
+  await page.click('#btn-tray');
+  await page.waitForSelector('#drawer:not(.hidden)', {timeout: 3000});
+  if (await page.locator('#drawer-body [data-t="clear"]').count()) {
+    await page.locator('#drawer-body [data-t="clear"]').click();
+    await page.waitForTimeout(150);
+  }
+  await page.click('#drawer-close');
+  await page.waitForTimeout(120);
+
+  await pane0.locator('.lbody .row').first().click({button: 'right'});
+  await page.waitForSelector('.ctx:not(.hidden)', {timeout: 3000});
+  await page.locator('.ctx:not(.hidden) .ctx-item[data-k="tray"]').click();
+  await page.waitForTimeout(220);
+  check('加入暂存盘后顶栏计数为 1', await trayBadge() === '1', await trayBadge());
+
+  await pane0.locator('.lbody .row').first().click({button: 'right'});
+  await page.waitForSelector('.ctx:not(.hidden)', {timeout: 3000});
+  await page.locator('.ctx:not(.hidden) .ctx-item[data-k="tray"]').click();
+  await page.waitForTimeout(220);
+  check('重复加入不增加计数（去重）', await trayBadge() === '1', await trayBadge());
+
+  // 注入一个确定失效的路径（mock 约定：.missing 结尾视为不存在）
+  await page.evaluate(async (ghost) => {
+    const store = await import(new URL('js/store.js', document.baseURI).href);
+    const menus = await import(new URL('js/menus.js', document.baseURI).href);
+    if (!store.S.tray.includes(ghost)) store.S.tray.push(ghost);
+    await store.saveState();
+    menus.showTray();
+  }, 'C:\\demo\\幽灵文件.missing');
+  await page.waitForTimeout(500);
+  const trayTitle = await page.locator('#drawer-title').innerText();
+  check('暂存盘标题显示实际条数', /2 项/.test(trayTitle), trayTitle);
+  check('失效项被标记「已失效」',
+    await page.locator('#drawer-body .tray-row.stale .tstale').count() === 1,
+    'stale=' + await page.locator('#drawer-body .tray-row.stale').count());
+  check('出现「清理失效项」按钮',
+    await page.locator('#drawer-body [data-t="purge"]').count() === 1);
+
+  await page.locator('#drawer-body [data-t="purge"]').click();
+  await page.waitForTimeout(250);
+  check('清理后只剩有效项',
+    /1 项/.test(await page.locator('#drawer-title').innerText()),
+    await page.locator('#drawer-title').innerText());
+
+  await page.locator('#drawer-body [data-t="clear"]').click();
+  await page.waitForTimeout(250);
+  check('清空后顶栏计数归零', await trayBadge() === '0', await trayBadge());
+  check('清空后抽屉给出空提示',
+    /暂存盘为空/.test(await page.locator('#drawer-body').innerText()));
+  await page.click('#drawer-close');
+  await page.waitForTimeout(120);
+
   // 9) 外部程序可访问性诊断（针对复制到云盘报「无权限」的排查）
   await pane0.locator('.lbody .row').first().click({button: 'right'});
   await page.waitForSelector('.ctx:not(.hidden)', {timeout: 3000});

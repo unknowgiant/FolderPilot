@@ -161,6 +161,7 @@ class TaskManager:
         jid = uuid.uuid4().hex[:12]
         job = {"id": jid, "kind": kind, "done": 0, "total": len(paths), "current": "",
                "state": "running", "error": "", "started": time.time(), "cancel": False,
+               "skipped": 0, "missing": [],
                "dest": norm_path(dest)}
         with self.lock:
             self.jobs[jid] = job
@@ -177,7 +178,13 @@ class TaskManager:
                     return
                 p = norm_path(p)
                 job["current"] = os.path.basename(p) or p
+                # 源已不存在（暂存盘里的项被删 / 改名 / 移走）：计数并留名，
+                # 不能静默 continue —— 否则任务报「完成」而实际少搬了东西。
                 if not os.path.exists(long_path(p)):
+                    job["skipped"] += 1
+                    if len(job["missing"]) < 200:
+                        job["missing"].append(p)
+                    job["done"] += 1
                     continue
                 target = unique_dest(os.path.join(dest, os.path.basename(p.rstrip("\\")) or p))
                 if job["kind"] == "zip":

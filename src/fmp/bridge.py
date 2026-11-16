@@ -13,7 +13,7 @@ import traceback
 
 from . import clipboard, fs, ops
 from .config import APP_ID, APP_TITLE, APP_VERSION, PROJECT_CODE
-from .model import FileEntry, entries_to_dict, norm_path
+from .model import FileEntry, entries_to_dict, long_path, norm_path
 
 
 class Bridge:
@@ -218,6 +218,15 @@ class Bridge:
         @R("clip.text")
         def _(p):
             return {"ok": clipboard.write_text(p.get("text", ""))}
+
+        # ---------- 暂存盘 ----------
+        @R("tray.check")
+        def _(p):
+            """检查暂存盘里的路径是否还在：被删 / 改名 / 移走的项要能标出来。"""
+            items = []
+            for x in p.get("paths", []):
+                items.append({"path": x, "exists": os.path.exists(long_path(x))})
+            return {"items": items}
 
         # ---------- 原生拖放（拖出到资源管理器 / 云盘等外部程序） ----------
         @R("drag.start")

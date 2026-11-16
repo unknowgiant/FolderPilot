@@ -575,8 +575,45 @@ export function aboutModal() {
     (m, close) => { m.querySelector('[data-ok]').onclick = close; });
 }
 
+// 抽屉内容会被反复重绘：用序号挡住迟到的异步结果，避免把失效标记
+// 打到已经换成「预览」的抽屉里。
+let traySeq = 0;
+
+function paintTrayStale(deadPaths) {
+  const body = $('#drawer-body');
+  if (!body) return;
+  const dead = new Set(deadPaths);
+  let n = 0;
+  body.querySelectorAll('.tray-row').forEach(r => {
+    if (!dead.has(r.dataset.p)) return;
+    r.classList.add('stale');
+    if (!r.querySelector('.tstale')) {
+      const tag = document.createElement('span');
+      tag.className = 'tstale';
+      tag.textContent = '已失效';
+      const tn = r.querySelector('.tn');
+      if (tn) tn.insertAdjacentElement('afterend', tag); else r.appendChild(tag);
+    }
+    n++;
+  });
+  const act = body.querySelector('.tray-actions');
+  if (n && act && !act.querySelector('[data-t="purge"]')) {
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.dataset.t = 'purge';
+    b.textContent = `清理失效项（${n}）`;
+    b.onclick = () => {
+      S.tray = S.tray.filter(x => !dead.has(x));
+      saveState(); A.syncTrayBadge(); showTray();
+      toast(`已清理 ${n} 项失效条目`);
+    };
+    act.appendChild(b);
+  }
+}
+
 export function showTray() {
   const d = $('#drawer'), body = $('#drawer-body');
+  const seq = ++traySeq;
   d.classList.remove('hidden');
   $('#drawer-title').textContent = `暂存盘 · ${S.tray.length} 项`;
   body.innerHTML = `<div class="tray-actions">
@@ -591,9 +628,19 @@ export function showTray() {
       </div>`).join('') : '<div class="hint">暂存盘为空。选中文件后右键「加入暂存盘」，或复制 / 剪切自动收集。</div>');
   body.querySelector('[data-t="copy"]').onclick = () => A.trayTransfer(false);
   body.querySelector('[data-t="move"]').onclick = () => A.trayTransfer(true);
-  body.querySelector('[data-t="clear"]').onclick = () => { S.tray = []; saveState(); showTray(); };
+  body.querySelector('[data-t="clear"]').onclick = () => { A.trayClear(); showTray(); };
   body.querySelectorAll('[data-rm]').forEach(b => b.onclick = async e => {
     e.stopPropagation(); await A.trayRemove(S.tray[Number(b.dataset.rm)]); showTray();
   });
   body.querySelectorAll('[data-p]').forEach(r => r.ondblclick = () => A.activate(r.dataset.p));
+  // 源文件可能早已被删 / 改名：后台校验一次，失效项标灰并给出「一键清理」
+  if (S.tray.length) {
+    api('tray.check', {paths: S.tray.slice()})
+      .then(r => {
+        if (seq !== traySeq) return;
+        const dead = (r.items || []).filter(x => !x.exists).map(x => x.path);
+        if (dead.length) paintTrayStale(dead);
+      })
+      .catch(() => {});
+  }
 }

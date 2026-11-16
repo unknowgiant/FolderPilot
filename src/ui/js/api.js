@@ -123,7 +123,11 @@ function mockCall(method, p) {
       unsafe_attrs: [], readable: true, error: ''}))});
     case 'clip.write': case 'clip.text': return R({ok:true});
     case 'clip.read': return R({paths:[], move:false});
-    case 'task.status': return R({id:'demo-job', state:'done', done:1, total:1, current:'', error:''});
+    // 演示态没有真实文件系统：约定以 .missing 结尾的路径视为「已失效」，
+    // 便于无桥测试覆盖「失效项标红 + 一键清理」这条链路。
+    case 'tray.check': return R({items: (p.paths || []).map(x => ({
+      path: x, exists: !/\.missing$/i.test(x)}))});
+    case 'task.status': return R({id:'demo-job', state:'done', done:1, total:1, current:'', error:'', skipped:0, missing:[]});
     case 'task.cancel': return R({ok:true});
     case 'tags.set': return R({tags:{}});
     case 'data.export': return R({path:'C:\\demo\\export.csv'});

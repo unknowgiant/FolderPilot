@@ -245,15 +245,17 @@ export async function transfer(paths, dest, move, i = S.activePane) {
   } catch (ex) { toast(ex.message, true); }
 }
 export async function pollTask(job, onDone) {
-  if (!job) return;
+  if (!job) return null;
   const box = $('#tasks');
   const card = document.createElement('div');
   card.className = 'task-card';
   card.innerHTML = `<div class="tt">正在处理…</div><div class="bar"><i style="width:0%"></i></div><div class="ts"></div>`;
   box.appendChild(card);
+  let last = null;
   for (let k = 0; k < 600; k++) {
     let s;
     try { s = await api('task.status', {id: job}); } catch (_) { break; }
+    last = s;
     const pct = s.total ? Math.round(s.done / s.total * 100) : 0;
     card.querySelector('.tt').textContent = `${s.state === 'move' ? '移动' : '复制'}中 ${s.done}/${s.total}`;
     card.querySelector('.bar i').style.width = pct + '%';
@@ -263,7 +265,18 @@ export async function pollTask(job, onDone) {
   }
   card.remove();
   if (onDone) await onDone();
-  toast('任务完成');
+  // 源文件已不存在时不能报「完成」了事：明确说出跳过了几项
+  if (last && last.skipped) {
+    const names = (last.missing || []).slice(0, 2).map(p => basename(p)).join('、');
+    toast(`${last.skipped} 项源文件已不存在，已跳过${names ? '：' + names : ''}`, true);
+  } else if (last && last.state === 'error') {
+    toast('任务出错：' + (last.error || '未知错误'), true);
+  } else if (last && last.state === 'cancelled') {
+    toast('任务已取消', true);
+  } else {
+    toast('任务完成');
+  }
+  return last;
 }
 
 export async function trashPaths(paths, i = S.activePane) {
@@ -321,16 +334,35 @@ export async function addFavorite(path) {
 export async function removeFavorite(path) {
   S.favorites = S.favorites.filter(x => x !== path); renderSidebar(); saveState();
 }
-export async function trayAdd(paths) {
-  for (const p of paths) if (!S.tray.includes(p)) S.tray.push(p);
-  saveState(); renderStatus(); toast(`暂存盘 +${paths.length}`);
-  const b = $('#tray-count'); if (b) b.textContent = S.tray.length;
+// 顶栏徽标统一由此刷新：加入 / 移除 / 清空 / 启动加载 都要走这里，
+// 否则数字会停在旧值（1.5 及以前只在「加入」时更新）。
+export function syncTrayBadge() {
+  const b = $('#tray-count');
+  if (!b) return;
+  b.textContent = S.tray.length;
+  b.classList.toggle('empty', S.tray.length === 0);
+  b.parentElement?.setAttribute('title', S.tray.length ? `暂存盘（${S.tray.length} 项）` : '暂存盘（空）');
 }
-export async function trayRemove(path) { S.tray = S.tray.filter(x => x !== path); saveState(); }
+
+export async function trayAdd(paths) {
+  let added = 0;
+  for (const p of paths) if (!S.tray.includes(p)) { S.tray.push(p); added++; }
+  saveState(); renderStatus(); syncTrayBadge();
+  toast(added ? `暂存盘 +${added}` : '已在暂存盘中');
+}
+export async function trayRemove(path) {
+  S.tray = S.tray.filter(x => x !== path);
+  saveState(); syncTrayBadge();
+}
+export async function trayClear() {
+  const n = S.tray.length;
+  S.tray = []; saveState(); syncTrayBadge();
+  if (n) toast(`已清空暂存盘（${n} 项）`);
+}
 export async function trayTransfer(move, i = S.activePane) {
   const t = tab(i); if (!t?.path || !S.tray.length) return;
   await transfer(S.tray.slice(), t.path, move, i);
-  if (move) S.tray = [];
+  if (move) { S.tray = []; syncTrayBadge(); }
   saveState();
 }
 
