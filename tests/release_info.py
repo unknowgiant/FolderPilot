@@ -56,7 +56,9 @@ for name, path in [('后端自检', 'tests/output/backend_report.json'),
                    ('无桥真实后端自测', 'tests/output/http_report.json'),
                    ('剪贴板跨程序兼容性', 'tests/output/clipboard_report.json'),
                    ('安装卸载测试', 'tests/output/install_report.json'),
-                   ('真实窗口拖放链路', 'tests/output/drag_report.json')]:
+                   ('真实窗口拖放链路', 'tests/output/drag_report.json'),
+                   ('空格预览专项', 'tests/output/preview_report.json'),
+                   ('鼠标侧键导航', 'tests/output/mouse_nav_report.json')]:
     fp = os.path.join(ROOT, path)
     if os.path.isfile(fp):
         d = json.load(open(fp, encoding='utf-8'))
@@ -108,7 +110,7 @@ zp = os.path.join(PARENT, ZIP_NAME)
 skip_dir = {'_build', '_build_setup', '__pycache__', 'real_cfg', '历史版本',
             '_orig', '_engine_probe'}
 skip_file = {'.server_url', '.real_server_url', 'ui.log', 'selftest.json',
-             'engine_selftest.json'}
+             'engine_selftest.json', '.release.json'}
 n = 0
 # 包内根目录用项目名（不带版本号），避免工程目录名还挂着旧版本号时把
 # 带旧版本号的陈旧路径打进交付包。

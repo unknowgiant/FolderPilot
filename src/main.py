@@ -39,6 +39,7 @@ from fmp.bridge import Bridge  # noqa: E402
 from fmp.config import APP_TITLE, Config  # noqa: E402
 from fmp.dragdrop import DragApi, DragService  # noqa: E402
 from fmp.model import long_path  # noqa: E402
+from fmp.mouse_nav import MouseNav  # noqa: E402
 from fmp.ops import TaskManager  # noqa: E402
 from fmp.search import SearchService  # noqa: E402
 from fmp.server import UIServer  # noqa: E402
@@ -432,6 +433,15 @@ def main():
     )
     bridge.window = win
     global_hotkey(win, APP_TITLE)
+
+    # 鼠标侧键：接住 XBUTTON1/2，当成「后退 / 前进」交给界面处理。
+    # 不接的话 WebView2 会按自己的浏览历史后退——单页界面没有历史，按了没反应。
+    def _mouse_nav(delta):
+        try:
+            win.evaluate_js("window.FMP && FMP.onMouseNav && FMP.onMouseNav(%d)" % delta)
+        except Exception:
+            pass
+    MouseNav(PROJECT_CODE, _mouse_nav, SHUTDOWN).start()
 
     # 不注册 closing 事件：窗口销毁过程中调用 evaluate_js 会与 WebView2
     # 互相等待，正是「关闭时未响应」的根因。会话改由前端 pagehide + sendBeacon 保存。

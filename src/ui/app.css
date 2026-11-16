@@ -316,6 +316,39 @@ svg.i use{fill:none}
   background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:100%;user-select:text}
 .pv-img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px}
 .pv-frame{width:100%;height:72vh;border:1px solid var(--line);border-radius:8px;background:#fff}
+
+/* 文件夹预览：内部条目列表 */
+.pv-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pv-row{display:flex;align-items:center;gap:8px;padding:0 9px;height:28px;font-size:12.5px;
+  background:var(--panel);cursor:pointer;min-width:0;border-bottom:1px solid var(--line)}
+.pv-row:last-child{border-bottom:none}
+.pv-row:hover{background:var(--hover)}
+.pv-row .i{flex:none;color:var(--tx3);width:14px;height:14px}
+.pv-row .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx)}
+.pv-row .ps{flex:none;color:var(--tx3);font-size:11.5px;font-variant-numeric:tabular-nums}
+
+/* Excel 预览：表格 */
+.pv-sheethead{display:flex;align-items:baseline;gap:8px;margin:12px 0 6px;font-size:12.5px;
+  font-weight:600;color:var(--tx)}
+.pv-sheethead:first-child{margin-top:0}
+.pv-sheethead span{margin-left:auto;font-weight:400;font-size:11.5px;color:var(--tx3)}
+.pv-tablewrap{overflow:auto;max-height:62vh;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.pv-table{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.pv-table th,.pv-table td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+  padding:3px 8px;text-align:left;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+.pv-table th:last-child,.pv-table td:last-child{border-right:none}
+.pv-table tbody tr:last-child td{border-bottom:none}
+.pv-table thead th{position:sticky;top:0;z-index:1;background:var(--panel2);font-weight:600;color:var(--tx2)}
+.pv-table tbody tr:hover td{background:var(--hover)}
+
+/* Word / PowerPoint 预览 */
+.pv-doc{font-size:12.5px;line-height:1.75;color:var(--tx)}
+.pv-doc p{margin:0 0 7px}
+.pv-slide{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;
+  font-size:12.5px;line-height:1.65;background:var(--panel)}
+.pv-slide p{margin:0 0 4px}
+.pv-slide p:last-child{margin-bottom:0}
+.pv-slide-no{font-size:11px;color:var(--tx3);margin-bottom:5px}
 .arc-row{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px;border-radius:6px;font-size:12px;min-width:0}
 .arc-row:hover{background:var(--hover)}
 .arc-row .an{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

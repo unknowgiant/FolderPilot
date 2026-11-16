@@ -12,7 +12,11 @@
     版本号相同、源码指纹相同   → 放行（同一版本重打包，例如只修构建脚本）
     版本号相同、源码指纹不同   → **拒绝**，提示先跑 bump_version.py --minor
 
-记录文件：<项目根>/_build/release.json（不随交付包发布）
+记录文件：<项目根>/.release.json（不随交付包发布）
+
+注意：记录**不能**放在 _build / _build_setup 里——那是构建临时目录，
+tests/release_info.py 打完包会整体删掉，删了就等于「没有出过包」，
+下一次同版本重打包会被误判成首次出包而放行。
 """
 from __future__ import annotations
 
@@ -20,13 +24,15 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import time
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.dirname(TOOLS)
 ROOT = os.path.dirname(SRC)
 VERSION_PY = os.path.join(SRC, "fmp", "version.py")
-STAMP = os.path.join(ROOT, "_build", "release.json")
+STAMP = os.path.join(ROOT, ".release.json")
+STAMP_LEGACY = os.path.join(ROOT, "_build", "release.json")
 
 # 这些目录里的东西不进交付产物，也不影响版本
 SKIP_DIRS = {
@@ -80,6 +86,12 @@ def digest_of(files: dict[str, str]) -> str:
 
 
 def read_stamp() -> dict | None:
+    if not os.path.isfile(STAMP) and os.path.isfile(STAMP_LEGACY):
+        # 旧版记录在 _build 里，顺手搬出来，避免打包后规则失效
+        try:
+            shutil.copy2(STAMP_LEGACY, STAMP)
+        except OSError:
+            pass
     if not os.path.isfile(STAMP):
         return None
     try:

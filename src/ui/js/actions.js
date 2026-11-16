@@ -87,6 +87,22 @@ export function historyMove(delta, i = S.activePane) {
   return navigate(t.history[n], i, {addHistory: false});
 }
 
+export function upLevel(i = S.activePane) {
+  const t = tab(i); if (!t || !t.path) return;
+  const p = t.path;
+  if (p === '::{THISPC}' || /^[A-Za-z]:[\\/]?$/.test(p)) return;   // 已在盘符根
+  const up = dirname(p);
+  if (up && up !== p) return navigate(up, i);
+}
+
+/** 鼠标侧键：后退优先走历史，历史到头就退到上一层目录。 */
+export function mouseNav(delta, i = S.activePane) {
+  const t = tab(i); if (!t) return;
+  if (delta > 0) return historyMove(1, i);
+  if (t.histIdx > 0) return historyMove(-1, i);
+  return upLevel(i);
+}
+
 export async function revealEntry(path, i = S.activePane) {
   const parent = dirname(path);
   await navigate(parent, i);
@@ -319,6 +335,19 @@ export async function trayTransfer(move, i = S.activePane) {
 }
 
 // ---------- 右侧抽屉：预览 ----------
+function sheetTable(rows) {
+  if (!rows || !rows.length) return '<div class="hint">这张表是空的</div>';
+  const width = Math.min(Math.max(...rows.map(r => r.length)), 40);
+  const norm = r => Array.from({ length: width }, (_, i) => r[i] ?? '');
+  const first = norm(rows[0]);
+  const hasHead = first.some(v => String(v).trim() !== '');
+  const body = hasHead ? rows.slice(1) : rows;
+  return `<div class="pv-tablewrap"><table class="pv-table">`
+    + (hasHead ? `<thead><tr>${first.map(v => `<th>${esc(String(v))}</th>`).join('')}</tr></thead>` : '')
+    + `<tbody>${body.map(r => `<tr>${norm(r).map(v => `<td>${esc(String(v))}</td>`).join('')}</tr>`).join('')}</tbody>`
+    + `</table></div>`;
+}
+
 export async function preview(path) {
   const d = $('#drawer'), body = $('#drawer-body');
   d.classList.remove('hidden');
@@ -328,10 +357,13 @@ export async function preview(path) {
   try { r = await api('entry.preview', {path}); }
   catch (ex) { body.innerHTML = `<div class="hint">${esc(ex.message)}</div>`; return; }
   S.preview = r;
+  const sizeLabel = r.is_dir
+    ? (r.total != null ? '共 ' + r.total + ' 个项目' : '文件夹')
+    : fmtSize(r.size);
   const meta = `<div class="pv-meta">
     <span class="k">名称</span><span class="v" title="${esc(r.name)}">${esc(r.name)}</span>
     <span class="k">位置</span><span class="v" title="${esc(r.parent)}">${esc(r.parent)}</span>
-    <span class="k">大小</span><span class="v">${fmtSize(r.size)}</span>
+    <span class="k">${r.is_dir ? '内容' : '大小'}</span><span class="v">${esc(sizeLabel)}</span>
     <span class="k">修改时间</span><span class="v">${fmtDate(r.mtime)}</span></div>`;
   let content = '';
   if (r.preview === 'image') content = `<img class="pv-img" src="${fileUrl(path)}" alt="">`;
@@ -339,13 +371,49 @@ export async function preview(path) {
   else if (r.preview === 'audio') content = `<audio controls style="width:100%" src="${fileUrl(path)}"></audio>`;
   else if (r.preview === 'pdf') content = `<iframe class="pv-frame" src="${fileUrl(path)}"></iframe>`;
   else if (r.preview === 'text') content = `<pre class="pv-text">${esc(r.text || '')}</pre>`;
+  else if (r.preview === 'dir') {
+    const items = r.items || [];
+    content = (items.length
+      ? `<div class="pv-list">` + items.map(x => `<div class="pv-row" data-path="${esc(x.path)}" data-dir="${x.is_dir ? 1 : 0}">
+          ${iconSvg(x)}<span class="pn" title="${esc(x.name)}">${esc(x.name)}</span>
+          <span class="ps">${x.is_dir ? '文件夹' : fmtSize(x.size)}</span></div>`).join('') + `</div>`
+      : '<div class="hint">空文件夹</div>')
+      + (r.truncated ? `<div class="hint">项目太多，只列出前 ${items.length} 个。</div>` : '');
+  }
+  else if (r.preview === 'sheet') {
+    content = (r.sheets || []).map(s => `<div class="pv-sheethead">${esc(s.name)}
+        <span>${(s.rows || []).length} 行</span></div>` + sheetTable(s.rows)).join('')
+      + (r.total_sheets > (r.sheets || []).length
+        ? `<div class="hint">共 ${r.total_sheets} 个工作表，这里显示前 ${(r.sheets || []).length} 个。</div>` : '')
+      + (r.truncated ? '<div class="hint">内容较长，只显示前若干行。</div>' : '');
+  }
+  else if (r.preview === 'doc') {
+    const ps = r.paragraphs || [];
+    content = ps.length
+      ? `<div class="pv-doc">` + ps.map(p => `<p>${esc(p)}</p>`).join('') + `</div>`
+      : '<div class="hint">文档里没有文字内容（可能只有图片或表格）。</div>';
+  }
+  else if (r.preview === 'slides') {
+    const sl = r.slides || [];
+    content = sl.length
+      ? sl.map(s => `<div class="pv-slide"><div class="pv-slide-no">第 ${s.index} 页</div>`
+          + s.texts.map(t => `<p>${esc(t)}</p>`).join('') + `</div>`).join('')
+        + (r.truncated ? '<div class="hint">页数较多，只显示前若干页。</div>' : '')
+      : '<div class="hint">没有可显示的文字。</div>';
+  }
   else if (r.preview === 'archive') {
     content = `<div class="tray-actions"><button class="btn" data-act="unzip">全部解压到当前文件夹</button></div>` +
       (r.archive_entries || []).map(x => `<div class="arc-row" data-member="${esc(x.name)}">
         <svg class="i"><use href="#${x.is_dir ? 'ic-folder' : 'ic-file'}"/></svg>
         <span class="an" title="${esc(x.name)}">${esc(x.name)}</span><span class="as">${fmtSize(x.size)}</span></div>`).join('');
-  } else content = `<div class="hint">此格式不提供内嵌预览，可右键用系统程序打开。</div>`;
+  } else content = `<div class="hint">${esc(r.error || '此格式不提供内嵌预览，可右键用系统程序打开。')}</div>`;
   body.innerHTML = meta + content;
+  body.querySelectorAll('[data-path]').forEach(el => {
+    el.onclick = () => {
+      if (el.dataset.dir === '1') navigate(el.dataset.path);
+      else preview(el.dataset.path);
+    };
+  });
   body.querySelectorAll('[data-act="unzip"]').forEach(b => b.onclick = () => unzipHere(path));
   body.querySelectorAll('[data-member]').forEach(el => el.ondblclick = async () => {
     try { const t = tab(); await api('ops.extract', {path, member: el.dataset.member, dest: t.path}); toast('已提取'); refresh(); }

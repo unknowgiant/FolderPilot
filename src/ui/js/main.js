@@ -394,6 +394,7 @@ async function boot() {
     renderPanes(); renderStatus('就绪 · 目录 / 全盘搜索 / 文件夹内搜索共用同一套打开逻辑');
     window.FMP = {
       onGlobalHotkey: Q.onGlobalHotkey,
+      onMouseNav: (d) => A.mouseNav(d > 0 ? 1 : -1),
       persist: () => saveState(),
       version: APP_META.version,
     };

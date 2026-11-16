@@ -40,12 +40,14 @@ from fmp.version import APP_VERSION, EXE_NAME, SETUP_NAME  # noqa: E402
 
 OWNER, REPO = "unknowgiant", "FolderPilot"
 DEFAULT_WORK = r"E:\软件开发\_publish_FolderPilot"
+# 文档都在项目根，不在 src/ 下（曾经误用 SRC 拼路径，导致文档全被跳过，
+# 而 LEGACY 又把根目录的 README/使用说明搬进了 legacy-1.0 —— 已修）。
 FILES = ["使用说明.txt", "更新日志.txt", "架构与修复说明.txt", "版本信息.txt",
          "启动-文件管理多面手.bat"]
+# 只搬 1.0 专有的旧文件。README.md / 使用说明.txt 是当前版本的文档，
+# 不能进这个清单，否则每发布一次就把现役文档搬去存档。
 LEGACY = [("FolderPilot.pyw", "FolderPilot.pyw"),
-          ("启动 FolderPilot.bat", "启动 FolderPilot.bat"),
-          ("使用说明.txt", "使用说明-1.0.txt"),
-          ("README.md", "README-1.0.md")]
+          ("启动 FolderPilot.bat", "启动 FolderPilot.bat")]
 
 
 def run(cmd, cwd=None, check=True):
@@ -86,6 +88,9 @@ def api(method, path, payload=None, tok=None, base="https://api.github.com"):
 
 
 def copy_tree(src, dst, skip_top):
+    if not os.path.isdir(src):
+        # os.walk 对不存在的目录一声不响地什么都不做，静默漏传最难查
+        raise SystemExit("源目录不存在：%s" % src)
     for base, dirs, names in os.walk(src):
         rel = os.path.relpath(base, src).replace("\\", "/")
         dirs[:] = [d for d in dirs if d not in ("__pycache__", ".git")
@@ -118,15 +123,16 @@ def sync(work: str, dry: bool) -> None:
     if dry:
         print("  [dry] 将同步 src/ tests/ licenses/ 与 %d 份文档" % len(FILES))
         return
-    copy_tree(os.path.join(SRC, "src"), os.path.join(work, "src"), {"tests"})
-    copy_tree(os.path.join(SRC, "tests"), os.path.join(work, "tests"), {"output"})
-    copy_tree(os.path.join(SRC, "licenses"), os.path.join(work, "licenses"), set())
+    copy_tree(os.path.join(ROOT, "src"), os.path.join(work, "src"), {"tests"})
+    copy_tree(os.path.join(ROOT, "tests"), os.path.join(work, "tests"), {"output"})
+    copy_tree(os.path.join(ROOT, "licenses"), os.path.join(work, "licenses"), set())
     for f in FILES:
-        s = os.path.join(SRC, f)
+        s = os.path.join(ROOT, f)
         if os.path.isfile(s):
             shutil.copy2(s, os.path.join(work, f))
         else:
-            print("  ! 缺少 %s，跳过" % f)
+            raise SystemExit("源工程缺少文档：%s —— 发布前请先补齐，别让仓库里的"
+                             "文档停在上一版" % s)
 
 
 def to_md(section: str) -> str:

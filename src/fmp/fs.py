@@ -8,6 +8,7 @@ import stat as statmod
 import zipfile
 from ctypes import wintypes
 
+from . import office
 from .model import (ARCHIVE_EXT, IMAGE_EXT, TEXT_EXT, FileEntry,
                     entries_to_dict, long_path, norm_path)
 
@@ -131,6 +132,11 @@ def props(path: str):
 
 TEXT_LIMIT = 512 * 1024
 
+# 能被解析出内容的 Office 格式（本质是 zip + XML）
+OFFICE_EXT = {"xlsx", "xlsm", "docx", "pptx"}
+# 旧版二进制 Office：无法内嵌解析，给明确提示而不是乱码
+LEGACY_OFFICE = {"xls", "doc", "ppt", "wps", "et", "dps"}
+
 
 def read_text_head(path: str, limit: int = TEXT_LIMIT):
     raw = b""
@@ -144,13 +150,56 @@ def read_text_head(path: str, limit: int = TEXT_LIMIT):
     return raw.decode("utf-8", "replace")
 
 
+def looks_text(path: str, probe: int = 4096) -> bool:
+    """内容里出现 NUL 基本就是二进制，别再当文本念。"""
+    try:
+        with open(long_path(path), "rb") as f:
+            return b"\x00" not in f.read(probe)
+    except OSError:
+        return False
+
+
+DIR_PREVIEW_LIMIT = 500
+
+
+def dir_preview(path: str, limit: int = DIR_PREVIEW_LIMIT):
+    """文件夹预览：把内部条目列出来（目录在前，按名称排序）。"""
+    items = list_dir(path, show_hidden=True)
+    items.sort(key=lambda e: (not e.is_dir, e.name.lower()))
+    total = len(items)
+    return {
+        "items": [{"name": e.name, "path": e.path, "is_dir": e.is_dir, "size": e.size,
+                   "mtime": e.mtime, "ext": e.ext, "kind": e.kind}
+                  for e in items[:limit]],
+        "total": total,
+        "truncated": total > limit,
+    }
+
+
 def preview_info(path: str):
-    """返回前端预览所需信息（文本直接给内容，其它给 /file 直链）。"""
+    """返回前端预览所需信息：文本/表格直接给内容，媒体给 /file 直链。"""
     e = FileEntry.from_path(path)
     d = e.to_dict()
-    if e.is_dir:
-        return {**d, "preview": "dir", "child_count": len(list_dir(path, True))}
     ext = e.ext.lower()
+
+    if e.is_dir:
+        try:
+            return {**d, "preview": "dir", **dir_preview(path)}
+        except (OSError, FileNotFoundError) as ex:
+            return {**d, "preview": "none", "error": "无法读取目录：%s" % ex}
+
+    if ext in OFFICE_EXT:
+        try:
+            return {**d, **office.office_preview(path, ext)}
+        except office.PreviewError as ex:
+            return {**d, "preview": "none", "error": str(ex)}
+        except OSError as ex:
+            return {**d, "preview": "none", "error": "读取失败：%s" % ex}
+
+    if ext in LEGACY_OFFICE:
+        return {**d, "preview": "none",
+                "error": "旧版 .%s 是二进制格式，无法内嵌预览，可用系统程序打开" % ext}
+
     if ext in IMAGE_EXT and e.size < 30 * 1024 * 1024:
         return {**d, "preview": "image"}
     if ext in ("mp4", "webm", "mkv", "avi", "mov"):
@@ -159,15 +208,19 @@ def preview_info(path: str):
         return {**d, "preview": "audio"}
     if ext == "pdf":
         return {**d, "preview": "pdf"}
-    if ext in ARCHIVE_EXT and ext == "zip":
+    if ext == "zip":
         return {**d, "preview": "archive", "archive_entries": zip_entries(path)}
-    if ext in TEXT_EXT or e.size < 256 * 1024:
+
+    if ext in TEXT_EXT or (e.size < TEXT_LIMIT and looks_text(path)):
         try:
             return {**d, "preview": "text", "text": read_text_head(path),
                     "lang": "markdown" if ext == "md" else ext}
         except OSError as ex:
             return {**d, "preview": "none", "error": str(ex)}
-    return {**d, "preview": "none"}
+
+    return {**d, "preview": "binary",
+            "error": "%s 是二进制文件，不提供文本预览" % (e.kind or ext.upper() or "该文件")}
+
 
 
 def zip_entries(path: str, limit: int = 4000):
