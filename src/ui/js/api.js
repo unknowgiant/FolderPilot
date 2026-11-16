@@ -62,7 +62,7 @@ function demoSearch(req) {
   return out;
 }
 const DEMO_STATE = {
-  theme: 'light', skin: 'default', skin_wallpaper: true, skin_opacity: 100,
+  theme: 'light', skin: 'default', skin_wallpaper: true, skin_surface: 100,
   density: 'comfortable', layout: 2, sidebar_width: 214,
   show_hidden: false, confirm_delete: true, ev_max: 500, colw: {size: 96, mtime: 146, type: 108, parent: 220},
   favorites: [ROOT], tags: {}, tray: [], history: ['伊川', '施工图设计'], session: null,

@@ -53,7 +53,7 @@ def find(title):
 
 
 def main():
-    # 参数：主题 key 列表；--op 40 可指定壁纸不透明度（验证滑杆在真机上的合成）
+    # 参数：主题 key 列表；--op 40 可指定工作面不透明度（验证滑杆在真机上的合成）
     args = sys.argv[1:]
     op = None
     if "--op" in args:
@@ -70,7 +70,7 @@ def main():
         cfg["skin"] = sk
         cfg["skin_wallpaper"] = True
         if op is not None:
-            cfg["skin_opacity"] = op
+            cfg["skin_surface"] = op
         save_cfg(cfg)
         p = subprocess.Popen([exe], close_fds=True)
         hwnd = 0

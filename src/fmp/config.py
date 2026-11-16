@@ -15,7 +15,8 @@ DEFAULTS = {
     # default | yunhai xinghe hupan mose zhuying qinghua hongri chicheng yaodong shishi
     "skin": "default",
     "skin_wallpaper": True,        # 皮肤壁纸；关掉只留配色
-    "skin_opacity": 100,           # 壁纸层不透明度（0-100）：只降这一层，图不会被洗白
+    "skin_surface": 100,           # 工作面不透明度（0-100）：100=主题默认厚度，越小面板越透
+    "skin_opacity": 100,           # 旧版「壁纸不透明度」，1.5 起不再使用，仅保留读取兼容
     "density": "comfortable",      # comfortable | compact
     "layout": 2,                   # 1..5 窗格数
     "sidebar_width": 208,

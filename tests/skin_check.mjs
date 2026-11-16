@@ -133,22 +133,30 @@ await page.waitForTimeout(200);
 const wallBack = await probe();
 check('wallpaper.on', wallBack.hasWall && wallBack.wallpaper === '1', wallBack.wallName);
 
-// 壁纸不透明度滑杆：拖动后只降壁纸层的 opacity
-const opDefault = await page.evaluate(() =>
+// 1.5 起：主题图恒为原图（opacity=1），滑杆调的是「工作面」的 alpha。
+// 之前把滑杆做在壁纸层上，面板仍是 48% 厚 + 10px 模糊，调到底也看不到图。
+const wallOp = await page.evaluate(() =>
   getComputedStyle(document.body, '::before').opacity);
-check('wallopacity.default', Math.abs(parseFloat(opDefault) - 1) < 0.02, opDefault);
+check('wallpaper.original', Math.abs(parseFloat(wallOp) - 1) < 0.02, wallOp);
+
+const paneFull = alphaOf((await probe()).paneColor);
 await page.locator('#sk-op').fill('40');
-await page.waitForTimeout(220);
-const op40 = await page.evaluate(() => ({
-  css: getComputedStyle(document.body, '::before').opacity,
-  label: document.querySelector('#sk-op-v').textContent,
-  cfg: (window.__FMP_TEST_CFG__ || {}).skin_opacity,
-}));
-check('wallopacity.slider', Math.abs(parseFloat(op40.css) - 0.4) < 0.02 && op40.label === '40%',
-  `${op40.css} / ${op40.label}`);
-await page.screenshot({path: path.join(OUT, 'skin_wallop40.png')});
+await page.waitForTimeout(240);
+const p40 = await probe();
+const p40label = (await page.textContent('#sk-op-v')).trim();
+const p40alpha = alphaOf(p40.paneColor);
+check('surfaceopacity.slider',
+  Math.abs(p40alpha - paneFull * 0.4) < 0.04 && p40label === '40%',
+  `${paneFull} → ${p40alpha} / ${p40label}`);
+// 模糊要跟着厚度一起减，否则薄面板上仍是糊成一片的风景
+const blur40 = await page.evaluate(() => getComputedStyle(document.querySelector('.pane')).backdropFilter);
+check('surfaceopacity.blur', /blur\((\d+(\.\d+)?)px\)/.test(blur40)
+  && parseFloat(blur40.match(/blur\((\d+(\.\d+)?)px\)/)[1]) < 6, blur40);
+await page.screenshot({path: path.join(OUT, 'skin_surface40.png')});
 await page.locator('#sk-op').fill('100');
-await page.waitForTimeout(200);
+await page.waitForTimeout(220);
+const paneBack = alphaOf((await probe()).paneColor);
+check('surfaceopacity.reset', Math.abs(paneBack - paneFull) < 0.02, `${paneBack}`);
 
 // 明暗切换在皮肤下应回到默认皮肤
 await page.click('#sk-seg button[data-th="dark"]');

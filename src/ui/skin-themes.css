@@ -13,10 +13,13 @@ html[data-skin="yunhai"]{
   --acc-soft:#F5ECE1; --sel:#ECDCC8; --hover:#FBF7F2;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(17,24,30,.16); --shadow-s:0 4px 16px rgba(17,24,30,.12);
-  --chrome:rgba(255,255,255,0.30); --pane-bg:rgba(255,255,255,0.44);
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#C08A46,#9A6E38);
   --app-bg:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%), url("skins/bg-yunhai.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-yunhai.webp"); --wall-lift:brightness(1.39) saturate(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%);
 }
@@ -35,10 +38,13 @@ html[data-skin="xinghe"]{
   --acc-soft:#2B3D5A; --sel:#384D6E; --hover:#20304A;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --chrome:rgba(22,35,58,0.24); --pane-bg:rgba(22,35,58,0.48);
+  --plate-rgb:22 35 58; --plate-a:0.48; --plate-top-a:0.24;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#7FA6DC,#80A7DC);
   --app-bg:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%), url("skins/bg-xinghe.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-xinghe.webp"); --wall-lift:brightness(1.83) saturate(1.08) contrast(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%);
 }
@@ -57,10 +63,13 @@ html[data-skin="hupan"]{
   --acc-soft:#F6F1E7; --sel:#EEE5D3; --hover:#FBF9F5;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(21,22,19,.16); --shadow-s:0 4px 16px rgba(21,22,19,.12);
-  --chrome:rgba(255,255,255,0.30); --pane-bg:rgba(255,255,255,0.44);
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#C7A76C,#89734B);
   --app-bg:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%), url("skins/bg-hupan.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-hupan.webp"); --wall-lift:brightness(1.00) saturate(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%);
 }
@@ -79,10 +88,13 @@ html[data-skin="mose"]{
   --acc-soft:#F1DFDD; --sel:#E5C2BF; --hover:#F9F1F0;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(14,14,14,.16); --shadow-s:0 4px 16px rgba(14,14,14,.12);
-  --chrome:rgba(255,255,255,0.30); --pane-bg:rgba(255,255,255,0.44);
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#A7342A,#A5332A);
   --app-bg:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%), url("skins/bg-mose.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-mose.webp"); --wall-lift:brightness(1.00) saturate(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%);
 }
@@ -101,10 +113,13 @@ html[data-skin="zhuying"]{
   --acc-soft:#EAEFEA; --sel:#D8E1D8; --hover:#F6F8F6;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(21,26,26,.16); --shadow-s:0 4px 16px rgba(21,26,26,.12);
-  --chrome:rgba(255,255,255,0.30); --pane-bg:rgba(255,255,255,0.44);
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#7C9B7E,#637C65);
   --app-bg:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%), url("skins/bg-zhuying.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-zhuying.webp"); --wall-lift:brightness(1.02) saturate(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%);
 }
@@ -123,10 +138,13 @@ html[data-skin="qinghua"]{
   --acc-soft:#F1F5F9; --sel:#E5ECF4; --hover:#F9FBFC;
   --danger:#C4574C; --ok:#3E8F6E; --warn:#B4832F;
   --shadow:0 18px 48px rgba(11,24,46,.16); --shadow-s:0 4px 16px rgba(11,24,46,.12);
-  --chrome:rgba(255,255,255,0.30); --pane-bg:rgba(255,255,255,0.44);
+  --plate-rgb:255 255 255; --plate-a:0.44; --plate-top-a:0.3;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#A8C1D9,#687887);
   --app-bg:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%), url("skins/bg-qinghua.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-qinghua.webp"); --wall-lift:brightness(1.00) saturate(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0.42) 100%);
 }
@@ -145,10 +163,13 @@ html[data-skin="hongri"]{
   --acc-soft:#5E3827; --sel:#74482F; --hover:#4C2B20;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --chrome:rgba(58,30,25,0.24); --pane-bg:rgba(58,30,25,0.48);
+  --plate-rgb:58 30 25; --plate-a:0.48; --plate-top-a:0.24;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#EFA25F,#EFA361);
   --app-bg:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%), url("skins/bg-hongri.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-hongri.webp"); --wall-lift:brightness(1.03) saturate(1.08) contrast(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%);
 }
@@ -167,10 +188,13 @@ html[data-skin="chicheng"]{
   --acc-soft:#402E24; --sel:#54402F; --hover:#2F201C;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --chrome:rgba(30,17,19,0.24); --pane-bg:rgba(30,17,19,0.48);
+  --plate-rgb:30 17 19; --plate-a:0.48; --plate-top-a:0.24;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#C8A46A,#C9A56B);
   --app-bg:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%), url("skins/bg-chicheng.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-chicheng.webp"); --wall-lift:brightness(1.85) saturate(1.08) contrast(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%);
 }
@@ -189,10 +213,13 @@ html[data-skin="yaodong"]{
   --acc-soft:#44433D; --sel:#5B5342; --hover:#30353A;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --chrome:rgba(28,40,54,0.24); --pane-bg:rgba(28,40,54,0.48);
+  --plate-rgb:28 40 54; --plate-a:0.48; --plate-top-a:0.24;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#E2AE5B,#E2AF5D);
   --app-bg:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%), url("skins/bg-yaodong.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-yaodong.webp"); --wall-lift:brightness(1.36) saturate(1.08) contrast(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%);
 }
@@ -211,10 +238,13 @@ html[data-skin="shishi"]{
   --acc-soft:#5A4130; --sel:#644531; --hover:#523E2F;
   --danger:#E8837C; --ok:#6FC79E; --warn:#E0B261;
   --shadow:0 18px 48px rgba(0,0,0,.55); --shadow-s:0 4px 16px rgba(0,0,0,.40);
-  --chrome:rgba(74,59,46,0.24); --pane-bg:rgba(74,59,46,0.48);
+  --plate-rgb:74 59 46; --plate-a:0.48; --plate-top-a:0.24;
+  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/
+  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));
+  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));
   --brand-grad:linear-gradient(135deg,#9C5B36,#C6A08A);
   --app-bg:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%), url("skins/bg-shishi.webp") center/cover no-repeat;
-  /* 壁纸层：独立出来才能单独调不透明度 */
+  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */
   --wall-img:url("skins/bg-shishi.webp"); --wall-lift:brightness(0.70) saturate(1.08) contrast(1.03);
   --wall-scrim:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, rgba(0,0,0,.14) 100%);
 }
@@ -226,16 +256,16 @@ html[data-skin="shishi"][data-wallpaper="0"]{
 
 /* ---------- 通用钩子：壁纸与玻璃 ---------- */
 body{background:var(--app-bg,var(--bg))}
-/* 壁纸独立成层（body::before / ::after），好处是能单独调不透明度：
-   之前壁纸是 body 背景图的一层，靠改蒙层 alpha 才能「变淡」，
-   但那样会让整张图发糊发白。现在只降这一层的 opacity，图本身还是清晰的。 */
+/* 壁纸独立成层（body::before / ::after）：
+   主题图保持原样（opacity 恒为 1），不再随滑杆变淡 —— 变淡的是它上面的
+   工作面（.pane / 顶栏 / 侧栏）。之前把滑杆做在壁纸层上，面板仍旧 48% 厚，
+   于是「调了也没用，还是看不到图」。 */
 html[data-skin]:not([data-skin="default"]){background:var(--bg)}
 html[data-skin]:not([data-skin="default"]) body{background:transparent}
 html[data-skin]:not([data-skin="default"]) body::before{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:var(--wall-img,none) center/cover no-repeat;
-  opacity:var(--wall-opacity,1);filter:var(--wall-lift,none);
-  transition:opacity .16s linear}
+  filter:var(--wall-lift,none)}
 html[data-skin]:not([data-skin="default"]) body::after{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:var(--wall-scrim,none)}
@@ -244,11 +274,14 @@ html[data-skin]:not([data-skin="default"]) body::after{
 html[data-skin]:not([data-skin="default"]) .topbar,
 html[data-skin]:not([data-skin="default"]) .sidebar,
 html[data-skin]:not([data-skin="default"]) .statusbar{
-  backdrop-filter:blur(10px) saturate(1.06);-webkit-backdrop-filter:blur(10px) saturate(1.06)}
+  backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.06);
+  -webkit-backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.06)}
 /* 内容窗格也是磨砂玻璃：壁纸的色温透进来，列表仍在同一块底上，不抢文字。
-   模糊半径要小：底图本身已做过柔化，再叠 20px+ 会把风景糊成一块纯色。 */
+   模糊半径跟着面板厚度一起减：面板越薄越要看得清图，一直 10px 会把风景
+   糊成一块纯色（「调了透明度还是看不到主题图」的另一半原因）。 */
 html[data-skin]:not([data-skin="default"]) .pane{
-  backdrop-filter:blur(10px) saturate(1.02);-webkit-backdrop-filter:blur(10px) saturate(1.02)}
+  backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.02);
+  -webkit-backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.02)}
 /* 列表本身不再刷一层实色，否则玻璃全被盖住；底色由 .pane 那层半透明面板负责 */
 html[data-skin]:not([data-skin="default"]) .lbody{background:transparent}
 /* 关键：.panes 原本铺满整个内容区当「窗格缝隙底色」（--line 实色），

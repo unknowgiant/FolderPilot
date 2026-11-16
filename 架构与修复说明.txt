@@ -183,14 +183,14 @@
       仅显示名称列、长名称两行显示、取消还原、外部可访问性诊断，
       共 29 项，输出 7 张界面截图。
 
-  node tests/skin_check.mjs（1.3 新增，61 项）
+  node tests/skin_check.mjs（1.3 新增，1.5 扩到 63 项）
       11 套（默认 + 10 主题）逐一切换：断言 data-skin 落地、只有一张卡片
       处于选中态、dataset.theme 与该主题 scheme 一致、背景图确为对应的
       skins/bg-<key>.webp、正文对面板的对比度 >= 4.5、#panes 必须透气且
       .pane 确为半透明（.glass，防止「只有侧栏能看图」那个 bug 回归）；
-      「显示壁纸」关/开、壁纸不透明度滑杆（默认 1.0，拖到 40% 后
-      body::before 的 opacity 必须同步为 0.4）、主题态点深色回默认皮肤、
-      恢复默认各断言一次；
+      「显示壁纸」关/开、壁纸层 opacity 恒为 1（主题图不可被调淡）、
+      工作面滑杆拖到 40% 后面板 alpha 降到 0.4 倍且 blur 同步减小、
+      主题态点深色回默认皮肤、恢复默认各断言一次；
       全程零 pageerror、零 4xx，逐套截图存 tests\output\skin_*.png。
 
   py -3.14 tests/skin_real.py xinghe mose [--op 35]（1.3 新增）
@@ -486,16 +486,28 @@
       稳定的底，两者配合才既有图又有字。
       列表文字在模糊后的低频底色上仍然清晰，实测正文对比度 8.98–17.06:1。
 
-  壁纸独立成层 + 不透明度滑杆（1.3 追加）
+  壁纸独立成层（1.3）+ 工作面可调厚度（1.5）
     早期壁纸是 body 背景图里的一层（--app-bg: 蒙层, url(...)），
     想「淡一点」只能改蒙层 alpha —— 结果是图被洗白、越来越糊，
     这正是「看不到图」的来路。
-    现在拆成 body::before（壁纸）/ body::after（蒙层）两层，
-    界面叠在上面；壁纸层用 opacity: var(--wall-opacity) 控制强度：
-      · 全局变量 --wall-opacity 由 applySkin() 按 cfg.skin_opacity 写入
-      · 皮肤面板里的滑杆（#sk-op，0–100%）拖动即改，不重算颜色、不重排
-      · 只降这一层，图本身仍是清晰的，不会变成一片白雾
-    html 背景设为 --bg，body 背景透明 —— 这样透明度降到 0 时自然落回配色底。
+    1.3 拆成 body::before（壁纸）/ body::after（蒙层）两层，界面叠在上面，
+    并把滑杆接在壁纸层的 opacity 上（--wall-opacity / cfg.skin_opacity）。
+    1.5 又反了一次，因为滑杆装错了地方：
+      · 壁纸层恒为原图（opacity 固定 1），不再随滑杆变淡；
+      · 滑杆改调它上面那层「工作面」：--plate-k 由 applySkin() 按
+        cfg.skin_surface（0–100 → 0–1）写入，面板 alpha 与磨砂模糊同步缩放：
+            面板 100% → alpha 0.48（深）/ 0.44（浅），blur 10px
+            面板  40% → alpha 0.19 / 0.18，            blur  4px
+            面板   0% → 只剩壁纸与文字
+      · 面板底色拆成 --plate-rgb（"22 35 58"）+ --plate-a / --plate-top-a
+        两个基准 alpha，运行时相乘，所以换滑杆不需要重新生成皮肤 CSS。
+    两个踩过的坑（都会让面板直接变全透明，肉眼只看到「图透上来了」）：
+      · 透明不能用老式 rgba(r,g,b,calc(...))，Chromium 判整条声明非法；
+        必须写 rgb(R G B / calc(...))（rgb 也得是空格分隔）。
+        这一点是 skin_check 的 .glass 断言先抓到的（computed 为 rgba(0,0,0,0)）。
+      · 变量别叫 --pane-a / --pane-b：app.css 用它们做窗格宽度比例
+        （minmax(0,var(--pane-a,1fr))），布局一算就成了 1.000fr。
+    html 背景设为 --bg，body 背景透明 —— 面板全透时自然落回配色底。
 
   提亮：按底图实测亮度自适应（不是统一 brightness）
     深色主题原先把夜景再压暗 12%–30%，星空的平均亮度只有 25/37/56，
@@ -520,10 +532,15 @@
     顶栏/侧栏/三行列表，选中态用该主题的强调色打勾。
     点击 → S.cfg.skin → applyTheme()（含 applySkin）→ saveState() 节流落盘。
 
-  验证（tests\skin_check.mjs，61 项 + tests\skin_real.py 真窗口）
+  验证（tests\skin_check.mjs，63 项 + tests\skin_real.py 真窗口）
     · 11 套逐一切换：断言 dataset.skin、单卡选中、dataset.theme 与该主题
       scheme 一致、背景图确为 skins/bg-<key>.webp、正文对比度 >= 4.5；
+    · .glass：皮肤态 #panes 必须透气（alpha<=0.05）且 .pane 半透明
+      （0.2 < alpha < 0.9），默认皮肤反过来必须是实色；
     · 「显示壁纸」关 → 断言背景不再是图片；开 → 恢复；
+    · 壁纸恒为原图：body::before 的 opacity 必须为 1；
+    · 滑杆拉到 40% → .pane 的 alpha 降到 0.4 倍、标签显示 40%、
+      backdrop-filter 的 blur 同步变小；归 100% → alpha 回到原值；
     · 主题态下点深色 → 断言回到 default + dark；恢复默认 → default + light；
     · 全程监听 pageerror 与 4xx/5xx，要求 0 错误；逐套截图留档。
     · skin_real.py 直接抓 WebView2 真窗口（Chrome 截图只证明 CSS 对，

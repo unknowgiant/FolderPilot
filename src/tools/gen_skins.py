@@ -109,7 +109,9 @@ def derive(t):
         sh, shs = "rgba(0,0,0,.55)", "rgba(0,0,0,.40)"
         # 深色主题的文字是浅色，底色越暗字越清楚 —— 所以不要压暗，反而要把图提亮，
         # 否则夜景/星空本来就暗，再叠蒙层就成「一锅黑」（用户原话：背景太昏）。
-        chrome, pane = rgba(surface, 0.24), rgba(surface, 0.48)
+        # 面板做成「底色 + 可调 alpha」：alpha 拆成 RGB 常量 + 基准值，
+        # 运行时乘 --surface-k 就能整体调透（滑杆），不必重新生成 CSS。
+        pane_a, chrome_a = 0.48, 0.24
         scrim = ("linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.04) 55%, "
                  "rgba(0,0,0,.14) 100%)")
         # 深色主题的目标：底图落在 60~70 的暗调区间。
@@ -133,7 +135,7 @@ def derive(t):
         danger, ok, warn = "#C4574C", "#3E8F6E", "#B4832F"
         sh = "rgba(%d,%d,%d,.16)" % rgb(mix(text, "#000000", 0.5))
         shs = "rgba(%d,%d,%d,.12)" % rgb(mix(text, "#000000", 0.5))
-        chrome, pane = rgba(surface, 0.30), rgba(surface, 0.44)
+        pane_a, chrome_a = 0.44, 0.30
         # 浅色主题要「整体变成浅色底」：原图反差很大（亮云压暗山），
         # 只提亮 10% 的话深色文字落在山影上会糊掉。蒙层压到四成，
         # 图的大形（山脊、天空渐变）仍在，但已经是浅色调，文字始终有底。
@@ -152,7 +154,12 @@ def derive(t):
         "line": line, "line2": line2, "tx": text, "tx2": tx2, "tx3": tx3,
         "acc": acc, "acc_d": acc_d, "acc_soft": acc_soft, "sel": sel, "hover": hover,
         "danger": danger, "ok": ok, "warn": warn, "shadow": sh, "shadow_s": shs,
-        "chrome": chrome, "pane": pane, "accent": accent, "accent_strong": strong,
+        # 工作面：底色拆成 rgb + 基准 alpha，运行时 alpha 再乘 --plate-k（滑杆）。
+        # 变量名不能叫 --pane-a / --pane-b —— 那是 app.css 里窗格宽度的分配比例。
+        # rgb 用空格分隔：只有 rgb(R G B / calc(...)) 这种现代写法才认 calc 透明度，
+        # 老式 rgba(r,g,b,calc(...)) 会被判为非法值 → 整条声明作废 → 面板全透明。
+        "plate_rgb": "%d %d %d" % rgb(surface), "plate_a": pane_a, "plate_top_a": chrome_a,
+        "accent": accent, "accent_strong": strong,
         "acc_ink": acc_ink, "acc_fill_d": shade(accent, 0.12 if dark_ui else -0.12),
         "scrim": scrim, "lift": lift, "bg": bg, "surface": surface,
         "brand": "linear-gradient(135deg,%s,%s)" % (accent, strong),
@@ -179,10 +186,14 @@ def block(t, d):
         "  --acc-soft:%s; --sel:%s; --hover:%s;" % (d["acc_soft"], d["sel"], d["hover"]),
         "  --danger:%s; --ok:%s; --warn:%s;" % (d["danger"], d["ok"], d["warn"]),
         "  --shadow:0 18px 48px %s; --shadow-s:0 4px 16px %s;" % (d["shadow"], d["shadow_s"]),
-        "  --chrome:%s; --pane-bg:%s;" % (d["chrome"], d["pane"]),
+        "  --plate-rgb:%s; --plate-a:%s; --plate-top-a:%s;" % (
+            d["plate_rgb"], d["plate_a"], d["plate_top_a"]),
+        "  /* 工作面透明度：--plate-k 由皮肤面板滑杆实时写入（1 = 本套主题的默认厚度，0 = 全透）*/",
+        "  --chrome:rgb(var(--plate-rgb) / calc(var(--plate-top-a) * var(--plate-k,1)));",
+        "  --pane-bg:rgb(var(--plate-rgb) / calc(var(--plate-a) * var(--plate-k,1)));",
         "  --brand-grad:%s;" % d["brand"],
         "  --app-bg:%s, %s;" % (d["scrim"], wall),
-        "  /* 壁纸层：独立出来才能单独调不透明度 */",
+        "  /* 壁纸层：原图直出，不随滑杆变淡；调淡的是上面的工作面 */",
         "  --wall-img:%s; --wall-lift:%s;" % (wall_img, d["lift"]),
         "  --wall-scrim:%s;" % d["scrim"],
         "}",
@@ -217,16 +228,16 @@ HOOKS = """
 
 /* ---------- 通用钩子：壁纸与玻璃 ---------- */
 body{background:var(--app-bg,var(--bg))}
-/* 壁纸独立成层（body::before / ::after），好处是能单独调不透明度：
-   之前壁纸是 body 背景图的一层，靠改蒙层 alpha 才能「变淡」，
-   但那样会让整张图发糊发白。现在只降这一层的 opacity，图本身还是清晰的。 */
+/* 壁纸独立成层（body::before / ::after）：
+   主题图保持原样（opacity 恒为 1），不再随滑杆变淡 —— 变淡的是它上面的
+   工作面（.pane / 顶栏 / 侧栏）。之前把滑杆做在壁纸层上，面板仍旧 48% 厚，
+   于是「调了也没用，还是看不到图」。 */
 html[data-skin]:not([data-skin="default"]){background:var(--bg)}
 html[data-skin]:not([data-skin="default"]) body{background:transparent}
 html[data-skin]:not([data-skin="default"]) body::before{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:var(--wall-img,none) center/cover no-repeat;
-  opacity:var(--wall-opacity,1);filter:var(--wall-lift,none);
-  transition:opacity .16s linear}
+  filter:var(--wall-lift,none)}
 html[data-skin]:not([data-skin="default"]) body::after{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:var(--wall-scrim,none)}
@@ -235,11 +246,14 @@ html[data-skin]:not([data-skin="default"]) body::after{
 html[data-skin]:not([data-skin="default"]) .topbar,
 html[data-skin]:not([data-skin="default"]) .sidebar,
 html[data-skin]:not([data-skin="default"]) .statusbar{
-  backdrop-filter:blur(10px) saturate(1.06);-webkit-backdrop-filter:blur(10px) saturate(1.06)}
+  backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.06);
+  -webkit-backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.06)}
 /* 内容窗格也是磨砂玻璃：壁纸的色温透进来，列表仍在同一块底上，不抢文字。
-   模糊半径要小：底图本身已做过柔化，再叠 20px+ 会把风景糊成一块纯色。 */
+   模糊半径跟着面板厚度一起减：面板越薄越要看得清图，一直 10px 会把风景
+   糊成一块纯色（「调了透明度还是看不到主题图」的另一半原因）。 */
 html[data-skin]:not([data-skin="default"]) .pane{
-  backdrop-filter:blur(10px) saturate(1.02);-webkit-backdrop-filter:blur(10px) saturate(1.02)}
+  backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.02);
+  -webkit-backdrop-filter:blur(calc(var(--glass-blur,10) * 1px)) saturate(1.02)}
 /* 列表本身不再刷一层实色，否则玻璃全被盖住；底色由 .pane 那层半透明面板负责 */
 html[data-skin]:not([data-skin="default"]) .lbody{background:transparent}
 /* 关键：.panes 原本铺满整个内容区当「窗格缝隙底色」（--line 实色），

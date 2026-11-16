@@ -71,9 +71,13 @@ export function applySkin() {
   const r = document.documentElement;
   r.dataset.skin = s.key;
   r.dataset.wallpaper = S.cfg.skin_wallpaper === false ? '0' : '1';
-  // 壁纸层不透明度：100 = 原样，0 = 只剩配色。只降这一层，图不会被洗白
-  const op = Math.max(0, Math.min(100, Number(S.cfg.skin_opacity ?? 100)));
-  r.style.setProperty('--wall-opacity', (op / 100).toFixed(2));
+  // 工作面不透明度：100 = 该主题的默认厚度，0 = 面板全透、只剩壁纸与文字。
+  // 壁纸那一层始终按原图显示，所以「看不到主题图」时调这里才有用。
+  const op = Math.max(0, Math.min(100, Number(S.cfg.skin_surface ?? 100)));
+  const k = op / 100;
+  r.style.setProperty('--plate-k', k.toFixed(2));
+  // 模糊跟着厚度走：面板越薄越要看清图，10px 糊在薄面板上等于把风景抹平
+  r.style.setProperty('--glass-blur', (10 * k).toFixed(1));
   const b = $('#btn-theme');
   if (b) {
     b.innerHTML = '<svg class="i"><use href="#ic-palette"/></svg>';
@@ -158,7 +162,7 @@ export function statePatch() {
     tray: S.tray, history: S.history, layout: S.layout,
     theme: S.cfg.theme, density: S.cfg.density, colw: S.cfg.colw, skin: currentSkin(),
     skin_wallpaper: S.cfg.skin_wallpaper !== false,
-    skin_opacity: Math.max(0, Math.min(100, Number(S.cfg.skin_opacity ?? 100))),
+    skin_surface: Math.max(0, Math.min(100, Number(S.cfg.skin_surface ?? 100))),
     pane_ratio: S.cfg.pane_ratio, name_only: S.cfg.name_only,
     name_wrap: S.cfg.name_wrap, sidebar_width: S.cfg.sidebar_width};
 }

@@ -288,9 +288,9 @@ export function skinModal() {
         <button data-th="system">跟随系统</button>
       </div>
       <label class="sk-switch"><input type="checkbox" id="sk-wall">显示壁纸</label>
-      <label class="sk-range" id="sk-op-wrap">壁纸不透明度
+      <label class="sk-range" id="sk-op-wrap">工作区不透明度
         <input type="range" id="sk-op" min="0" max="100" step="5" value="100"
-          title="100% 原样显示，0% 只剩配色">
+          title="100% 为该主题的默认厚度；数值越小，面板越透、主题图越清楚（文字也会越靠壁纸）">
         <span class="sk-op-v" id="sk-op-v">100%</span></label>
       <span class="sk-note" id="sk-note"></span>
     </div>
@@ -312,8 +312,8 @@ export function skinModal() {
         w.checked = S.cfg.skin_wallpaper !== false;
         w.disabled = currentSkin() === 'default';
         w.closest('.sk-switch').style.opacity = w.disabled ? .45 : 1;
-        // 不透明度滑杆：默认皮肤没有壁纸，关掉壁纸时也无意义
-        const op = Math.max(0, Math.min(100, Number(S.cfg.skin_opacity ?? 100)));
+        // 工作面不透明度滑杆：默认皮肤没有壁纸，关掉壁纸时也无意义
+        const op = Math.max(0, Math.min(100, Number(S.cfg.skin_surface ?? 100)));
         const rng = m.querySelector('#sk-op');
         rng.value = op;
         m.querySelector('#sk-op-v').textContent = op + '%';
@@ -342,15 +342,15 @@ export function skinModal() {
         S.cfg.skin_wallpaper = e.target.checked;
         applySkin(); saveState(); sync();
       };
-      // 拖动即时预览：只改壁纸那一层的 opacity，不重新算色、不重排
+      // 拖动即时预览：只改工作面那层的 alpha 与模糊，不重新算色、不重排
       m.querySelector('#sk-op').oninput = e => {
-        S.cfg.skin_opacity = Number(e.target.value);
+        S.cfg.skin_surface = Number(e.target.value);
         m.querySelector('#sk-op-v').textContent = e.target.value + '%';
         applySkin(); saveState();
       };
       m.querySelector('[data-reset]').onclick = () => {
         S.cfg.skin = 'default'; S.cfg.theme = 'light'; S.cfg.skin_wallpaper = true;
-        S.cfg.skin_opacity = 100;
+        S.cfg.skin_surface = 100;
         applyTheme(); saveState(); sync(); toast('已恢复默认外观');
       };
       m.querySelector('[data-done]').onclick = close;
