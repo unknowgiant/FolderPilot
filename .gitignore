@@ -1,0 +1,15 @@
+# 构建与运行产物
+_build/
+_build_setup/
+_engine_probe/
+__pycache__/
+*.py[cod]
+*.log
+
+# 测试截图与原图缓存
+tests/output/
+src/tests/output/
+
+# 交付产物走 Releases，不入库
+/*.exe
+/*.zip

@@ -1,0 +1,543 @@
+{
+  "name": "软件主题套件 · 10 套 UI 色板",
+  "version": "2026.11",
+  "generatedAt": "2026-11-13",
+  "source": "主题规范页 v2（壁纸采样后按界面可用性微调）；壁纸已本地化为 ui/skins/*.webp",
+  "wallpaperSize": {
+    "width": 2048,
+    "height": 1152
+  },
+  "tokens": [
+    "--tm-bg-image",
+    "--tm-bg",
+    "--tm-surface",
+    "--tm-text",
+    "--tm-accent",
+    "--tm-accent-strong",
+    "--tm-overlay",
+    "--tm-scheme"
+  ],
+  "contrastMethod": "WCAG 2.1 相对亮度公式 (L1+0.05)/(L2+0.05)",
+  "themes": [
+    {
+      "id": "01",
+      "key": "yunhai",
+      "name": "云海初醒",
+      "category": "风景",
+      "slogan": "每一帧，都是新的开始",
+      "meanLuminance": 147,
+      "textScheme": "dark-text",
+      "recommendedFor": "日报、汇报、数据看板",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/wXuUA7C1HQ",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/yunhai.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#E7DCCA",
+          "name": "云白"
+        },
+        "secondary": {
+          "hex": "#5C6C7A",
+          "name": "雾青"
+        },
+        "text": {
+          "hex": "#22303C",
+          "name": "墨蓝"
+        },
+        "accent": {
+          "hex": "#C08A46",
+          "name": "晨金"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/wXuUA7C1HQ\")",
+        "--tm-bg": "#E7DCCA",
+        "--tm-surface": "#FFFFFF",
+        "--tm-text": "#22303C",
+        "--tm-accent": "#C08A46",
+        "--tm-accent-strong": "#9A6E38",
+        "--tm-overlay": "rgba(255, 255, 255, 0.55)",
+        "--tm-scheme": "dark-text"
+      },
+      "contrast": {
+        "textOnSurface": 13.5,
+        "textPassesAAA": true,
+        "accentOnSurface": 3.02,
+        "accentReadableOnSurface": 4.51,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "02",
+      "key": "xinghe",
+      "name": "星河入梦",
+      "category": "风景",
+      "slogan": "把夜色，留给专注",
+      "meanLuminance": 31,
+      "textScheme": "light-text",
+      "recommendedFor": "夜间长时工作、低光环境",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/jdLvMO5Mbw",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/xinghe.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#0A1424",
+          "name": "夜蓝"
+        },
+        "secondary": {
+          "hex": "#1D3150",
+          "name": "深水蓝"
+        },
+        "text": {
+          "hex": "#E9F0F8",
+          "name": "星白"
+        },
+        "accent": {
+          "hex": "#7FA6DC",
+          "name": "星蓝"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/jdLvMO5Mbw\")",
+        "--tm-bg": "#0A1424",
+        "--tm-surface": "#16233A",
+        "--tm-text": "#E9F0F8",
+        "--tm-accent": "#7FA6DC",
+        "--tm-accent-strong": "#80A7DC",
+        "--tm-overlay": "rgba(0, 0, 0, 0.35)",
+        "--tm-scheme": "light-text"
+      },
+      "contrast": {
+        "textOnSurface": 13.69,
+        "textPassesAAA": true,
+        "accentOnSurface": 6.28,
+        "accentReadableOnSurface": 6.35,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "03",
+      "key": "hupan",
+      "name": "湖畔微风",
+      "category": "风景",
+      "slogan": "风起时，记得抬头",
+      "meanLuminance": 183,
+      "textScheme": "dark-text",
+      "recommendedFor": "门户首页、客户端首屏",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/7iGWFUTvgA",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/hupan.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#EFEDE2",
+          "name": "暖白"
+        },
+        "secondary": {
+          "hex": "#A9A79B",
+          "name": "苇灰"
+        },
+        "text": {
+          "hex": "#2A2B26",
+          "name": "松墨"
+        },
+        "accent": {
+          "hex": "#C7A76C",
+          "name": "苇金"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/7iGWFUTvgA\")",
+        "--tm-bg": "#EFEDE2",
+        "--tm-surface": "#FFFFFF",
+        "--tm-text": "#2A2B26",
+        "--tm-accent": "#C7A76C",
+        "--tm-accent-strong": "#89734B",
+        "--tm-overlay": "rgba(255, 255, 255, 0.55)",
+        "--tm-scheme": "dark-text"
+      },
+      "contrast": {
+        "textOnSurface": 14.27,
+        "textPassesAAA": true,
+        "accentOnSurface": 2.29,
+        "accentReadableOnSurface": 4.55,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "04",
+      "key": "mose",
+      "name": "墨色千山",
+      "category": "国风",
+      "slogan": "山高水长，静水深流",
+      "meanLuminance": 230,
+      "textScheme": "dark-text",
+      "recommendedFor": "文档、写作、阅读类工具",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/fjWnvCNb0J",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/mose.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#F4F1E8",
+          "name": "宣纸"
+        },
+        "secondary": {
+          "hex": "#6B6A64",
+          "name": "中墨"
+        },
+        "text": {
+          "hex": "#1C1C1B",
+          "name": "浓墨"
+        },
+        "accent": {
+          "hex": "#A7342A",
+          "name": "朱印"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/fjWnvCNb0J\")",
+        "--tm-bg": "#F4F1E8",
+        "--tm-surface": "#FFFFFF",
+        "--tm-text": "#1C1C1B",
+        "--tm-accent": "#A7342A",
+        "--tm-accent-strong": "#A5332A",
+        "--tm-overlay": "rgba(255, 255, 255, 0.55)",
+        "--tm-scheme": "dark-text"
+      },
+      "contrast": {
+        "textOnSurface": 17.06,
+        "textPassesAAA": true,
+        "accentOnSurface": 6.63,
+        "accentReadableOnSurface": 6.76,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "05",
+      "key": "zhuying",
+      "name": "竹影清风",
+      "category": "国风",
+      "slogan": "疏影横斜，清风自来",
+      "meanLuminance": 186,
+      "textScheme": "dark-text",
+      "recommendedFor": "设置页、轻量工具",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/7UnCLdkzZB",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/zhuying.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#EFEDE7",
+          "name": "粉墙"
+        },
+        "secondary": {
+          "hex": "#37464C",
+          "name": "黛青"
+        },
+        "text": {
+          "hex": "#2A3335",
+          "name": "竹墨"
+        },
+        "accent": {
+          "hex": "#7C9B7E",
+          "name": "竹青"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/7UnCLdkzZB\")",
+        "--tm-bg": "#EFEDE7",
+        "--tm-surface": "#FFFFFF",
+        "--tm-text": "#2A3335",
+        "--tm-accent": "#7C9B7E",
+        "--tm-accent-strong": "#637C65",
+        "--tm-overlay": "rgba(255, 255, 255, 0.55)",
+        "--tm-scheme": "dark-text"
+      },
+      "contrast": {
+        "textOnSurface": 12.94,
+        "textPassesAAA": true,
+        "accentOnSurface": 3.07,
+        "accentReadableOnSurface": 4.56,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "06",
+      "key": "qinghua",
+      "name": "青花山河",
+      "category": "国风",
+      "slogan": "一笔青花，万顷江山",
+      "meanLuminance": 202,
+      "textScheme": "dark-text",
+      "recommendedFor": "文化、教育、内容平台",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/Hy5fof7MMP",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/qinghua.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#F3F5F4",
+          "name": "瓷白"
+        },
+        "secondary": {
+          "hex": "#2C4F87",
+          "name": "靛青"
+        },
+        "text": {
+          "hex": "#16305C",
+          "name": "深靛"
+        },
+        "accent": {
+          "hex": "#A8C1D9",
+          "name": "淡青"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/Hy5fof7MMP\")",
+        "--tm-bg": "#F3F5F4",
+        "--tm-surface": "#FFFFFF",
+        "--tm-text": "#16305C",
+        "--tm-accent": "#A8C1D9",
+        "--tm-accent-strong": "#687887",
+        "--tm-overlay": "rgba(255, 255, 255, 0.55)",
+        "--tm-scheme": "dark-text"
+      },
+      "contrast": {
+        "textOnSurface": 13.03,
+        "textPassesAAA": true,
+        "accentOnSurface": 1.86,
+        "accentReadableOnSurface": 4.54,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "07",
+      "key": "hongri",
+      "name": "红日东方",
+      "category": "红色",
+      "slogan": "山河为证，初心不改",
+      "meanLuminance": 60,
+      "textScheme": "light-text",
+      "recommendedFor": "党建、政务服务系统的庄重版",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/LRuUoxUuQ8",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/hongri.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#331C18",
+          "name": "赭石暗"
+        },
+        "secondary": {
+          "hex": "#C4462F",
+          "name": "赤红"
+        },
+        "text": {
+          "hex": "#F6E7D2",
+          "name": "暖霞白"
+        },
+        "accent": {
+          "hex": "#EFA25F",
+          "name": "日轮橙"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/LRuUoxUuQ8\")",
+        "--tm-bg": "#331C18",
+        "--tm-surface": "#3A1E19",
+        "--tm-text": "#F6E7D2",
+        "--tm-accent": "#EFA25F",
+        "--tm-accent-strong": "#EFA361",
+        "--tm-overlay": "rgba(0, 0, 0, 0.35)",
+        "--tm-scheme": "light-text"
+      },
+      "contrast": {
+        "textOnSurface": 12.52,
+        "textPassesAAA": true,
+        "accentOnSurface": 7.25,
+        "accentReadableOnSurface": 7.31,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "08",
+      "key": "chicheng",
+      "name": "赤诚",
+      "category": "红色",
+      "slogan": "赤子之心，山河不忘",
+      "meanLuminance": 31,
+      "textScheme": "light-text",
+      "recommendedFor": "启动屏、登录页、品牌页",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/4C2LOuHhJX",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/chicheng.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#130A0B",
+          "name": "深墨"
+        },
+        "secondary": {
+          "hex": "#8C1E26",
+          "name": "绸红"
+        },
+        "text": {
+          "hex": "#EAD8B9",
+          "name": "浅金"
+        },
+        "accent": {
+          "hex": "#C8A46A",
+          "name": "金线"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/4C2LOuHhJX\")",
+        "--tm-bg": "#130A0B",
+        "--tm-surface": "#1E1113",
+        "--tm-text": "#EAD8B9",
+        "--tm-accent": "#C8A46A",
+        "--tm-accent-strong": "#C9A56B",
+        "--tm-overlay": "rgba(0, 0, 0, 0.35)",
+        "--tm-scheme": "light-text"
+      },
+      "contrast": {
+        "textOnSurface": 13.12,
+        "textPassesAAA": true,
+        "accentOnSurface": 7.84,
+        "accentReadableOnSurface": 7.93,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "09",
+      "key": "yaodong",
+      "name": "窑洞灯火",
+      "category": "复古",
+      "slogan": "星星之火，可以燎原",
+      "meanLuminance": 38,
+      "textScheme": "light-text",
+      "recommendedFor": "红色系低亮度档、专注模式",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/HknWdyZhGH",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/yaodong.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#15202E",
+          "name": "夜蓝"
+        },
+        "secondary": {
+          "hex": "#8A6A44",
+          "name": "土黄"
+        },
+        "text": {
+          "hex": "#F3E5C9",
+          "name": "灯暖白"
+        },
+        "accent": {
+          "hex": "#E2AE5B",
+          "name": "灯火"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/HknWdyZhGH\")",
+        "--tm-bg": "#15202E",
+        "--tm-surface": "#1C2836",
+        "--tm-text": "#F3E5C9",
+        "--tm-accent": "#E2AE5B",
+        "--tm-accent-strong": "#E2AF5D",
+        "--tm-overlay": "rgba(0, 0, 0, 0.35)",
+        "--tm-scheme": "light-text"
+      },
+      "contrast": {
+        "textOnSurface": 11.99,
+        "textPassesAAA": true,
+        "accentOnSurface": 7.42,
+        "accentReadableOnSurface": 7.48,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    },
+    {
+      "id": "10",
+      "key": "shishi",
+      "name": "实事求是",
+      "category": "复古",
+      "slogan": "没有调查，就没有发言权",
+      "meanLuminance": 72,
+      "textScheme": "light-text",
+      "recommendedFor": "学习、调研、笔记类应用",
+      "wallpaper": {
+        "url": "https://aka.doubaocdn.com/s/w7rhk5ZGVN",
+        "width": 2048,
+        "height": 1152,
+        "ratio": "16:9",
+        "local": "skins/shishi.webp"
+      },
+      "colors": {
+        "primary": {
+          "hex": "#3B2E23",
+          "name": "木褐"
+        },
+        "secondary": {
+          "hex": "#C3AE8A",
+          "name": "米黄"
+        },
+        "text": {
+          "hex": "#F2EADB",
+          "name": "纸白"
+        },
+        "accent": {
+          "hex": "#9C5B36",
+          "name": "蜡褐"
+        }
+      },
+      "tokens": {
+        "--tm-bg-image": "url(\"https://aka.doubaocdn.com/s/w7rhk5ZGVN\")",
+        "--tm-bg": "#3B2E23",
+        "--tm-surface": "#4A3B2E",
+        "--tm-text": "#F2EADB",
+        "--tm-accent": "#9C5B36",
+        "--tm-accent-strong": "#C6A08A",
+        "--tm-overlay": "rgba(0, 0, 0, 0.35)",
+        "--tm-scheme": "light-text"
+      },
+      "contrast": {
+        "textOnSurface": 8.98,
+        "textPassesAAA": true,
+        "accentOnSurface": 2.03,
+        "accentReadableOnSurface": 4.5,
+        "accentNote": "accent 为设计原色，用于图形、填充与描边；accent-strong 为同色相加深/提亮后的可读色，可承载文字与图标。"
+      }
+    }
+  ]
+}

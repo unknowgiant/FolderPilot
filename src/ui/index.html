@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-density="comfortable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="fmp-token" content="__FMP_TOKEN__">
+<meta name="fmp-title" content="__FMP_TITLE__">
+<meta name="fmp-version" content="__FMP_VERSION__">
+<meta name="fmp-data-dir" content="__FMP_DATA_DIR__">
+<title>__FMP_TITLE__</title>
+<!-- 空图标：避免浏览器/WebView2 自动请求 /favicon.ico 产生 404 -->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="app.css">
+<!-- 主题皮肤：由 src/tools/gen_skins.py 生成，须在 app.css 之后加载才能覆盖变量 -->
+<link rel="stylesheet" href="skin-themes.css">
+</head>
+<body>
+
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="ic-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></symbol>
+  <symbol id="ic-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h4"/></symbol>
+  <symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></symbol>
+  <symbol id="ic-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M9 11h6M9 14h6M9 17h4"/></symbol>
+  <symbol id="ic-zip" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M12 6v2m0 2v2m0 2v2"/></symbol>
+  <symbol id="ic-video" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></symbol>
+  <symbol id="ic-audio" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></symbol>
+  <symbol id="ic-exe" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></symbol>
+  <symbol id="ic-cad" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 10h16M10 4v16"/></symbol>
+  <symbol id="ic-pdf" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M9 15h1.5a1.5 1.5 0 0 0 0-3H9v6m5-6h1.5a1.5 1.5 0 0 0 0-3H14v6"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+  <symbol id="ic-fwd" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+  <symbol id="ic-up" viewBox="0 0 24 24"><path d="m6 14 6-6 6 6"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 6"/><path d="M20 5v6h-6"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M6 10v10h12V10"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="ic-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="ic-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></symbol>
+  <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+  <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+  <symbol id="ic-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/></symbol>
+  <symbol id="ic-tray" viewBox="0 0 24 24"><path d="M3 13h4l2 3h6l2-3h4"/><path d="M5 5h14l2 8v6H3v-6z"/></symbol>
+  <symbol id="ic-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="ic-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/></symbol>
+  <symbol id="ic-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+  <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></symbol>
+  <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="ic-tag" viewBox="0 0 24 24"><path d="M3 11V4h7l10 10-7 7z"/><circle cx="7.5" cy="7.5" r="1.2"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="ic-drive" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 14h.01M11 14h.01"/></symbol>
+  <symbol id="ic-palette" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 0-18c5 0 9 3.6 9 8 0 2.5-2 4-4.2 4H15a2 2 0 0 0-1.4 3.4A1.8 1.8 0 0 1 12 21z"/><circle cx="8.5" cy="10.5" r="1.1"/><circle cx="12" cy="7.8" r="1.1"/><circle cx="15.7" cy="9.4" r="1.1"/></symbol>
+  <symbol id="ic-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 4v16M14 4v16"/></symbol>
+</svg>
+
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">◆</span><span class="brand-txt">文件管理多面手</span><span class="brand-ver">__FMP_VERSION__</span></div>
+    <div class="layout-switch" id="layout-switch" title="窗格布局 (Ctrl+1~5)"></div>
+    <div class="top-spacer"></div>
+    <button class="tbtn primary" id="btn-global-search" title="全盘搜索 (Ctrl+F / Alt+Space)"><svg class="i"><use href="#ic-search"/></svg><span>全盘搜索</span></button>
+    <button class="tbtn" id="btn-tray" title="暂存盘"><svg class="i"><use href="#ic-tray"/></svg><span id="tray-count">0</span></button>
+    <button class="tbtn" id="btn-theme" title="界面皮肤"><svg class="i"><use href="#ic-palette"/></svg></button>
+    <button class="tbtn" id="btn-settings" title="设置"><svg class="i"><use href="#ic-settings"/></svg></button>
+    <button class="tbtn" id="btn-about" title="关于"><svg class="i"><use href="#ic-info"/></svg></button>
+  </header>
+
+  <div class="workarea" id="workarea">
+    <aside id="sidebar" class="sidebar">
+      <div class="side-scroll" id="side-scroll"></div>
+      <div class="side-foot"><button class="sbtn" id="btn-pin" title="固定当前目录"><svg class="i"><use href="#ic-star"/></svg> 固定当前目录</button></div>
+    </aside>
+    <div class="splitter" id="splitter" title="拖动调整侧栏宽度"></div>
+    <main id="panes" class="panes lay-2"></main>
+    <div class="pane-split hidden" id="pane-split" title="拖动调整左右窗格宽度；双击恢复均分"></div>
+  </div>
+
+  <footer class="statusbar">
+    <span id="st-backend" class="st-item clickable" title="点击重新连接 Everything">检测中…</span>
+    <span class="st-sep"></span>
+    <span id="st-main" class="st-item grow">就绪</span>
+    <span id="st-sel" class="st-item"></span>
+  </footer>
+</div>
+
+<!-- 全盘搜索命令面板 -->
+<div id="palette" class="overlay hidden">
+  <div class="pal-card">
+    <div class="pal-top">
+      <svg class="i"><use href="#ic-search"/></svg>
+      <input id="pal-input" placeholder="全盘搜索：文件名 / 路径，支持通配符与 ext: 语法" spellcheck="false" autocomplete="off">
+      <button class="navbtn" id="pal-filter" title="高级筛选"><svg class="i"><use href="#ic-filter"/></svg></button>
+      <button class="navbtn" id="pal-close" title="关闭 (Esc)"><svg class="i"><use href="#ic-x"/></svg></button>
+    </div>
+    <div class="pal-scope">
+      <div class="chips" id="pal-scope-chips">
+        <button class="chip on" data-scope="global">全盘</button>
+        <button class="chip" data-scope="folder">当前文件夹及子目录</button>
+      </div>
+      <span class="pal-stat" id="pal-stat">输入关键字开始搜索</span>
+    </div>
+    <div id="pal-adv" class="pal-adv hidden">
+      <label>类型 <input id="pal-ext" placeholder="如 doc;pdf;xlsx"></label>
+      <label>最小(字节) <input id="pal-smin" type="number" min="0" placeholder="不限"></label>
+      <label>最大(字节) <input id="pal-smax" type="number" min="0" placeholder="不限"></label>
+      <label class="ck"><input type="checkbox" id="pal-case"> 区分大小写</label>
+      <label class="ck"><input type="checkbox" id="pal-word"> 全字匹配</label>
+      <label class="ck"><input type="checkbox" id="pal-content"> 搜索文件内容</label>
+    </div>
+    <div id="pal-res" class="pal-res"></div>
+    <div class="pal-hint">↑↓ 选择 · Enter 打开 · Ctrl+Enter 定位所在目录 · 右键更多操作 · Esc 关闭</div>
+  </div>
+</div>
+
+<!-- 右侧抽屉：预览 / 暂存盘 -->
+<div id="drawer" class="drawer hidden"><div class="drawer-head"><span id="drawer-title">预览</span><button class="navbtn" id="drawer-close"><svg class="i"><use href="#ic-x"/></svg></button></div><div id="drawer-body" class="drawer-body"></div></div>
+
+<div id="ctx" class="ctx hidden"></div>
+<div id="modal-root"></div>
+<div id="toast" class="toast hidden"></div>
+<div id="tasks" class="tasks"></div>
+<div id="drag-badge" class="drag-badge hidden"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

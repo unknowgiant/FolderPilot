@@ -1,0 +1,608 @@
+文件管理多面手 · 架构与修复说明
+项目编号：文件管理多面手（版本号见程序标题 / 更新日志）
+============================================================
+
+一、为什么要重写
+
+旧版是单文件 FolderPilot.pyw（约 385 KB）：前端 HTML 以 base64 内嵌、
+业务逻辑直接写在 HTTP 路由里、目录列表与搜索结果各用一套数据结构。
+两个已暴露的问题其实是同一个架构缺陷的不同表现：
+
+  · 目录列表项：{name, is_dir, size, mtime, ext}，路径靠
+    joinPath(当前目录, name) 现算；
+  · 文件夹内搜索项：把 Everything 返回的 path + name 合并成
+    一个含反斜杠的相对显示名 rel，绝对路径被丢弃，存进 t.srch.items；
+  · 双击 / 右键处理器：只在 t.items（当前目录直接子项）里按 name 查找，
+    找不到就 return。
+
+所以搜索结果必然打不开；全局搜索因为是另一套 PAL.results + 独立打开
+逻辑，反而正常。压字则是渲染层把超长相对路径塞进名称列、列头与数据行
+列定义不一致、搜索条件条与地址栏共用有限宽度的结果。
+只打补丁无法消除这类问题，因此按分层架构重写。
+
+============================================================
+
+二、新架构
+
+  ┌──────────────────────────────────────────────────────┐
+  │ 界面层  src/ui/index.html + app.css + js/*.js (ES Module)│
+  │   store.js  单一状态源        view.js   纯渲染            │
+  │   actions.js 命令            search.js 统一搜索管线       │
+  │   menus.js  菜单/弹窗        main.js   事件与启动         │
+  └───────────────┬──────────────────────────────────────┘
+                  │  POST /api  {method, params}  + 随机 token
+  ┌───────────────▼──────────────────────────────────────┐
+  │ 传输层  fmp/server.py  /api 命令 + 静态资源 + 文件流     │
+  │         fmp/bridge.py  唯一命令路由，统一 {ok,data,error}│
+  │         127.0.0.1 随机端口 + 每次启动随机 token          │
+  └───────────────┬──────────────────────────────────────┘
+  ┌───────────────▼──────────────────────────────────────┐
+  │ 服务层  search.py  统一搜索（SDK→HTTP→本地索引）         │
+  │         ops.py     文件操作 + 后台任务进度                │
+  │         fs.py      目录/磁盘/属性/预览                    │
+  │         clipboard.py  系统剪贴板 CF_HDROP                │
+  │         everything.py Everything SDK / HTTP 适配         │
+  └───────────────┬──────────────────────────────────────┘
+  ┌───────────────▼──────────────────────────────────────┐
+  │ 领域层  model.py  FileEntry（path 为唯一身份）           │
+  │         config.py 配置/会话原子持久化                    │
+  └──────────────────────────────────────────────────────┘
+
+  命令与资源在同一个本地服务内按路由分层：业务走 POST /api，
+  图片/视频/PDF/预览走 /file 流（支持 Range），静态资源走 /。
+  早期版本曾把业务命令放在 pywebview 的 js_api 上，但 js_api 是
+  异步注入的，启动竞态下会报 `window.pywebview.api.call is not a
+  function`；1.0 修复版改为 HTTP 命令通道后不再依赖注入时序。
+
+============================================================
+
+三、核心契约：FileEntry.path
+
+  FileEntry { path, name, parent, is_dir, size, mtime, ctime,
+              ext, kind, rel, source, tags }
+
+  · path 恒为规范化的绝对路径，是条目的唯一身份；
+  · name 只用于显示，rel 只用于搜索结果副标题，source 只用于状态展示；
+  · 目录列表 / 全盘搜索 / 文件夹内搜索 / 暂存盘 / 剪贴板 / 颜色标签
+    全部产出同一种结构；
+  · 打开、右键、Enter、Ctrl+Enter、Space 预览、复制路径、拖拽、
+    标记颜色，一律直接消费 path，绝不用「当前目录 + 名称」二次拼装；
+  · 即使条目不在当前列表（例如全局搜索结果），activate() 也会用
+    entry.stat(path) 兜底，仍然能打开；
+  · Windows 超长路径统一用 \\?\ 前缀访问，但对外只暴露不带前缀的
+    普通路径，保证 Shell / WebView2 都能识别。
+
+「打开一个文件夹内搜索结果」的完整数据流：
+
+  输入关键字 → search.js runPaneSearch(scope=folder, root=当前目录)
+            → bridge.call('search.run')
+            → search.py 选择后端（SDK / HTTP / 本地索引）
+            → 每个命中路径构造成 FileEntry(path=绝对路径, rel=相对路径)
+            → 前端写入 tab.results，与目录列表共用 renderPane()
+            → 行 DOM 带 data-path="绝对路径"
+            → dblclick / contextmenu 读取 data-path
+            → actions.activate(path) → entry.open(path) 或 navigate(path)
+
+============================================================
+
+四、界面如何避免压字
+
+  1. 列头与数据行共用同一套 CSS Grid 变量 --cols，任何时刻列数一致；
+  2. 所有文本容器 min-width:0 + overflow:hidden + text-overflow:ellipsis
+     + white-space:nowrap，按钮 flex:none，不参与挤压；
+  3. 搜索结果主列改为两行：第一行「图标 + 主名称（关键字高亮）」，
+     第二行「相对路径」小字副标题；另设「位于」列显示父目录名，
+     不再把整条超长路径塞进名称列；
+  4. 搜索输入框、搜索条件条、地址栏各自独立成行；条件条内
+     文本区 flex:1 可省略，操作按钮 flex:none；
+  5. 侧栏磁盘「名称 + 可用空间」与容量条分两行，永不叠字；
+  6. 容器查询（@container）：窗格 ≤520px 自动隐藏第 4 列，
+     ≤390px 再隐藏第 3 列，保证名称列始终 ≥140px；
+  7. 选中行只切换 .sel/.cut class（refreshSelection），不重建行 DOM，
+     保住浏览器合成的 dblclick / contextmenu 事件链；
+  8. 深浅主题、舒适/紧凑行高都只改 CSS 变量，不改变布局结构。
+
+============================================================
+
+五、搜索后端优先级
+
+  搜索来源三级（自 1.2 起内置内核，用户无需单独安装 Everything）：
+    ① 系统里已装并运行的 Everything（注册表 / 常见路径探测）
+    ② 随包内核：assets\engine\Everything.exe + Everything64.dll，
+       首次使用时释放到 %APPDATA%\FileManagerMulti\v1\engine，
+       用私有 Everything.ini 以「隐形」方式启动
+    ③ 内置本地索引：文件夹内搜索实时遍历（支持超长路径，90 秒缓存）；
+       全局搜索后台建立全盘索引（25 万条 / 50 秒上限）
+
+  传输层仍是 Everything SDK（内嵌官方 Everything64.dll）→ Everything
+  HTTP（用户自己开了 HTTP 服务时）→ 本地索引。
+  状态栏左侧实时显示当前后端：内置引擎 / Everything SDK / 本地索引。
+  范围切换（当前文件夹 ⇄ 全盘）只是 scope 参数变化，结果结构不变。
+
+  为什么必须内置 .exe 而不是只放 DLL：SDK 只是 IPC 客户端，真正建索引
+  的是 Everything.exe（读 MFT、监听 USN）。只放 DLL 的「集成」在没装
+  Everything 的机器上等于没有后端——这正是旧版的实际状态。
+
+  为什么需要一次授权：读 NTFS 的 MFT 必须管理员权限。官方做法是装一个
+  约 1MB 的常驻服务（Everything.exe -svc）供客户端借用，客户端因此能
+  以普通用户身份索引。程序在「没服务且没提权」时不会自行提权（会弹一个
+  没人看得懂的 UAC），只把状态标成 needs_auth，由界面按钮显式触发。
+  判断「服务在不在」用 SCM（OpenSCManager/OpenService），不碰注册表，
+  标准用户也能查；「这个服务是不是我们装的」用 QueryServiceConfig 比对
+  可执行路径，卸载时只清指向内置内核目录的那一个。
+
+============================================================
+
+六、目录结构
+
+  文件管理多面手\<（版本号只在程序文件名上，目录不带版本）
+    ├─ 文件管理多面手 X.Y.exe        便携版主程序（PyInstaller onefile）
+    ├─ 启动-文件管理多面手.bat       脚本版启动器
+    ├─ 使用说明.txt                 功能 / 快捷键 / 数据说明
+    ├─ 架构与修复说明.txt           本文件
+    ├─ 更新日志.txt                 按版本倒序的变更记录
+    ├─ 版本信息.txt                 构建信息与 SHA256
+    ├─ src\
+    │   ├─ main.py                  入口 / 单实例 / 全局热键 / --selftest
+    │   ├─ build.py                 打包脚本
+    │   ├─ fmp\                     领域层 + 服务层 + 传输层
+    │   │   ├─ engine.py            内置搜索引擎（随包 Everything 内核）
+    │   │   ├─ everything.py        SDK / HTTP 两种取数通道
+    │   │   └─ search.py            统一搜索管线（scope 只改参数）
+    │   ├─ ui\                      HTML / CSS / ES 模块
+    │   └─ assets\
+    │       ├─ Everything64.dll     官方 SDK（IPC 客户端）
+    │       └─ engine\              随包内核：Everything.exe + 许可证
+    ├─ tests\
+    │   ├─ selftest.py              后端自检（含超长中文路径）
+    │   ├─ engine_test.py           内置引擎 17 项回归
+    │   ├─ ui_test.mjs              浏览器端到端自测
+    │   └─ output\                  测试报告与截图
+    └─ _build\                      打包中间产物（可删除）
+
+============================================================
+
+七、验证方式
+
+  py -3.14 tests/selftest.py
+      目录列表、文件夹内搜索、缓存、超长中文路径、命令路由、
+      /api 命令通道与 token 鉴权、静态资源、文件流、
+      列宽/窗格偏好的持久化，共 25 项。
+
+  py -3.14 tests/engine_test.py（1.2 新增）
+      内置搜索引擎 18 项：内核释放（exe / dll / 私有 ini / 许可证）、
+      ini 为便携且隐形、SCM 服务探测、ensure 后真实命中、folder 作用域、
+      stop 不影响外部实例、未授权时明确拒绝而不是静默提权、
+      卸载清理只针对指向内核目录的服务。
+
+  node tests/ui_test.mjs（自包含，会自动拉起 tests/serve.py）
+      演示数据下的启动、搜索结果路径、右键菜单、右键打开、双击打开、
+      Ctrl+Enter 定位、全盘搜索、列对齐无压字、深色三栏窄窗格，
+      以及列宽调节全套：名称列拖拽加宽、列头/数据行对齐、双击恢复自动、
+      设置面板即时预览且不溢出、窗格比例与分隔条拖动、
+      仅显示名称列、长名称两行显示、取消还原、外部可访问性诊断，
+      共 29 项，输出 7 张界面截图。
+
+  node tests/skin_check.mjs（1.3 新增，61 项）
+      11 套（默认 + 10 主题）逐一切换：断言 data-skin 落地、只有一张卡片
+      处于选中态、dataset.theme 与该主题 scheme 一致、背景图确为对应的
+      skins/bg-<key>.webp、正文对面板的对比度 >= 4.5、#panes 必须透气且
+      .pane 确为半透明（.glass，防止「只有侧栏能看图」那个 bug 回归）；
+      「显示壁纸」关/开、壁纸不透明度滑杆（默认 1.0，拖到 40% 后
+      body::before 的 opacity 必须同步为 0.4）、主题态点深色回默认皮肤、
+      恢复默认各断言一次；
+      全程零 pageerror、零 4xx，逐套截图存 tests\output\skin_*.png。
+
+  py -3.14 tests/skin_real.py xinghe mose [--op 35]（1.3 新增）
+      改配置 → 启动打包版 → 窗口置顶并固定位置 → 抓 WebView2 真窗口截图
+      → 关闭并还原配置。确认磨砂玻璃与壁纸层在真机合成里正常。
+
+  node tests/http_ui_test.mjs
+      真实后端 + 普通 Chrome（不存在 window.pywebview）的无桥环境验证：
+      启动成功、真实目录加载、HTTP 命令通道、本地索引搜索、
+      搜索结果右键菜单、配置握手，共 10 项。
+      这是针对「api.call is not a function」启动竞态的回归测试。
+
+  "文件管理多面手 X.Y.exe" --selftest
+      在打包后的 exe 内验证资源解包路径、token 注入、命令路由与
+      /api 通道，结果写入 %APPDATA%\FileManagerMulti\v1\selftest.json。
+
+  "文件管理多面手 X.Y.exe" --engine-test [bundled]
+      验证打包后内置引擎可用：内核能否从安装包释放到数据目录、
+      服务状态、能否真搜出结果（毫秒数与命中数），结果写入
+      %APPDATA%\FileManagerMulti\v1\engine_selftest.json。
+      加 bundled 参数则强制走随包内核（不启动机器上已装的 Everything），
+      用于确认「用户没装 Everything」这一最坏场景。
+
+  py -3.14 tests/close_test.py
+      点击关闭后的退出行为验证：窗口在 ~2 秒内消失、退出码 0，
+      无「未响应」卡死（针对关闭卡死的回归测试）。
+
+  py -3.14 tests/install_test.py
+      安装版端到端：静默安装 → 文件/注册表/快捷方式 → 静默卸载 →
+      目录自动清除，共 17 项；并验证安装向导窗口可打开可关闭。
+      注意：安装器用 PowerShell 建快捷方式，在受限沙箱里跑会被拦，
+      需在普通 PowerShell 会话执行（不是安装器的问题）。
+
+  py -3.14 tests/clipboard_test.py
+      跨程序剪贴板兼容性：路径规范化、CF_HDROP 头与中文长路径往返、
+      FileNameW / DropEffect、剪切标记、ANSI 版读取、坏路径拒绝，
+      共 14 项（会临时改写系统剪贴板）。
+
+============================================================
+
+七A、安装版与关闭卡死（本版新增修复）
+
+  1. 关闭卡死（未响应）
+     旧版在窗口 closing 事件里同步 evaluate_js 保存会话，WebView2
+     销毁与 UI 线程互等导致「未响应」。本版：关闭时不再跨线程调 JS，
+     会话由页面 pagehide 用 sendBeacon 异步落盘；HTTP 线程 daemon 化；
+     加退出看门狗。实测连续两次关闭均 ~2.1 秒干净退出。
+
+  2. 安装版 Setup.exe
+     · 用户级安装（%LOCALAPPDATA%\Programs），全程免管理员；
+     · 向导可选安装目录、桌面/开始菜单快捷方式；
+     · 静默安装：Setup.exe --silent --dir=... --report=...；
+     · 卸载：主程序 --uninstall（支持 --yes 静默），写 HKCU 卸载项，
+       可从「设置 → 应用」卸载；个人数据保留。
+     · 卸载目录清理：运行中的 exe 无法删自身，先改名挪到 %TEMP%（同盘），
+       安装目录立即删除；残留由独立批处理循环重试清除（约 1 秒完成）。
+       实测不使用 PowerShell：其 -EncodedCommand 在部分机器上进程级
+       开销可达 30 秒（疑似安全软件深度扫描），故全部改用 cmd 批处理。
+
+七B、可调节列宽 / 窗格宽度（本版新增）
+
+  需求：列头区域需要可调宽度的设置，便于查看长中文文件名。
+
+  · 列头与所有数据行始终共用同一套 --cols 网格变量；表头右侧留
+    54px 独立留白放「列宽」按钮，数据行右内边距同步补偿
+    （含 .lbody 的 4px），保证左右边界严格对齐、调节后不错位。
+  · 名称列三态：自动（minmax(0,1fr)）/ 固定宽度 / 仅显示名称列。
+    固定宽度用 CSS min()/max()：名称取 min(Npx, 100%-30px)，
+    其余三列按 (100% - Npx - 30px) 的比例等比收缩到 min(原宽, …)，
+    所以名称真的变宽，又永不溢出或把其他列裁掉。
+  · 「仅显示名称列」把其余轨道收成 0 并隐藏单元格，名称占满整栏；
+    「长名称两行显示」用 -webkit-line-clamp:2 + 行高自适应。
+  · 左右分屏改为 minmax(0,var(--pane-a)) / minmax(0,var(--pane-b))，
+    比例取自 config.pane_ratio；#pane-split 绝对定位覆盖交界处，
+    随布局 / 侧栏 / 窗口尺寸变化重定位，拖动与双击均分都可用。
+  · colw.name/size/mtime/type、pane_ratio、name_only、name_wrap
+    经 statePatch 统一持久化到 config.json，老配置自动补齐默认值。
+
+七C、跨程序剪贴板加固与外部可访问性诊断（本版新增）
+
+  背景：用户从本软件拖文件到云盘客户端报「无权访问该文件/文件夹」。
+  排查结论：用资源管理器复制同一文件同样报错；实际源文件为
+  D:\移动云盘同步盘 下的普通本地文件（186 字符路径、属性仅 ARCHIVE、
+  CreateFileW 独占方式可打开、无进程锁定）；本软件 CF_HDROP 经独立读取
+  校验完全正确。因此错误来自云盘客户端 / 云端目录权限，不是本软件。
+
+  即使如此，仍加固了交接层：
+  · clipboard.shell_path() 统一剥离 \\?\ 长路径前缀、规范化分隔符，
+    保证交给外部程序的是普通 Win32 绝对路径。
+  · write_files() 写前逐个 check_access()（CreateFileW 只读探测），
+    不可读即抛明确错误；SetClipboardData 返回值逐个校验，失败不再静默；
+    OpenClipboard 带重试；额外提供 FileNameW 与 Preferred DropEffect。
+  · read_files() 支持其它程序写入的 ANSI(fWide=0) DROPFILES，
+    以前一律按 UTF-16 解码会把 GBK 路径读成乱码。
+  · 新增 clip.check 命令与右键「检查外部程序可访问性」弹窗，
+    展示路径长度、特殊属性（占位 / 重解析点 / 只读）、可读性及处理建议。
+  · 新增 tests/clipboard_test.py（14 项）做跨程序格式回归。
+
+============================================================
+
+七D、拖出到外部程序（本版新增功能）
+
+  需求：Windows 资源管理器可以把文件拖到桌面 / 云盘 / 其它程序，本软件
+  以前拖不出窗口。原因是 WebView2 内的 HTML5 拖拽只在渲染进程内部有效，
+  不会向外部程序提供 CF_HDROP。
+
+  实现：
+  1. 前端取消 HTML5 拖拽（行/磁贴不再设 draggable），改用 pointer 事件
+     自己做手势：位移超过阈值后判断——仍在窗格内则走内部拖放（复制 /
+     Shift 移动），离开窗口则请求原生拖放。这样避免 Chromium 抢先启动
+     自己的拖拽循环接管鼠标。
+  2. 原生侧自建 IDataObject（纯 ctypes，vtable 12 槽）：提供 CF_HDROP、
+     CF_UNICODETEXT、Preferred DropEffect，实现 QueryGetData /
+     EnumFormatEtc / GetData / SetData 与引用计数。没有用
+     SHCreateDataObject —— 它要求「父文件夹 PIDL + 相对子 PIDL」，
+     无法覆盖搜索结果这种跨目录多选。
+  3. 调用 SHDoDragDrop 发起系统拖放。
+
+  三个踩过的坑（都已解决，记录备查）：
+  · 线程模型：pywebview 的 js_api 回调与事件回调都不在窗口 UI 线程，
+    而 DoDragDrop 内部的 SetCapture 只对调用线程的输入队列有效，直接
+    调用会抢不到捕获、循环永不结束。解法是调用前 AttachThreadInput
+    把当前线程挂到窗口线程的输入队列，结束后解除；并在调用线程补
+    OleInitialize（否则返回 CO_E_NOTINITIALIZED 0x800401F0）。
+  · 窗口句柄：64 位下 Win32 返回值必须显式声明 restype，否则 HWND 被
+    截断成 32 位，子类化/定点都失败。
+  · **js_api 递归陷阱（本轮关闭卡死的真因）**：pywebview 生成 JS 接口时
+    会递归遍历 js_api 对象的全部公开属性（webview/util.py get_functions）。
+    先前直接传 Bridge，而 Bridge.window 指向窗口对象，于是它一路展开
+    window.native.AccessibilityObject.Bounds.Empty.Empty.…（每层返回新
+    对象，id 去重失效），无限递归直到 RecursionError；该遍历线程卡死期间
+    窗口无法正常销毁，表现为「关闭时未响应」，且时快时慢。现在改为只
+    暴露 fmp.dragdrop.DragApi 一个门面对象（唯一公开方法 drag，其余字段
+    全部下划线私有），递归问题彻底消失。关闭实测由「偶发卡死」稳定到
+    约 1.4–2.0 秒干净退出。
+
+  协议：前端拖出时优先调用 window.pywebview.api.drag(payload)（应用线程，
+  同步返回结果）；浏览器自测环境无桥时退回 HTTP 的 drag.start。
+
+============================================================
+
+七E、内置搜索引擎（1.2 新增：不再需要单独安装 Everything）
+
+  模块：src\fmp\engine.py（EngineManager），不依赖任何第三方包，纯 ctypes。
+
+  部署（deploy）
+    · 源：assets\engine\{Everything.exe, Everything64.dll,
+      Everything-License.txt}（打包时随 --add-data assets 一起进 exe）
+    · 目标：%APPDATA%\FileManagerMulti\v1\engine\
+    · 按「大小 + 修改时间」比对，版本变了才覆盖；覆盖前先 stop()，
+      否则运行中的 exe 无法重写。
+    · 私有 Everything.ini（仅在不存在时写入，避免覆盖用户改动）：
+        app_data=0                  便携模式，不写 %APPDATA%\Everything
+        run_as_admin=0              绝不自行提权
+        show_tray_icon=0            完全隐形，不占托盘
+        run_in_background=1         后台常驻内存索引
+        allow_multiple_instances=0  与用户自己的实例互不干扰
+        check_for_updates_on_startup=0
+        http_server_enabled=0 / etp_server_enabled=0   不占端口
+
+  启停（ensure / stop）
+    · ensure()：SDK 已可用 → 直接返回；否则先试外部 Everything
+      （-startup 启动，最多等 8 秒），再试内置内核。
+    · 启动内置内核：Popen([exe, "-startup", "-config", ini], cwd=engine)，
+      CREATE_NO_WINDOW，句柄不继承。
+    · stop() 只 terminate 我们自己 Popen 的那个进程，用户自己的
+      Everything 一律不动；主程序 webview.start() 返回后调用。
+
+  授权（enable）
+    · 已提权 → 直接 subprocess 跑 Everything.exe -install-service。
+    · 未提权 → ShellExecuteW(..., "runas", exe, "-install-service")，
+      UAC 被拒（返回 ≤ 32）就如实报「已取消管理员授权」，不重试。
+    · 装完轮询 SCM 状态最多 60 秒，然后 ensure() 拉起内核。
+    · 记录 engine_service.json 标记；卸载时只有「服务可执行路径包含
+      内置内核目录」才移除，避免误删用户自己安装的 Everything 服务。
+
+  SDK 绑定修复
+    · everything.py 原先把 Everything_IsDirResult 当必备导出绑定，而这个
+      函数在官方 DLL 里根本不存在 → connect() 抛 AttributeError，被
+      available() 的 except 吞掉，SDK 直连永久为 False（旧版实际一直跑
+      本地索引，用户感知是「搜索慢、大目录卡」）。
+    · 现在改为 bind(..., optional=True)：IsDirResult → IsFolderResult →
+      GetResultAttributes & FILE_ATTRIBUTE_DIRECTORY 依次降级，缺哪个都
+      不影响其余功能。
+
+  时序与超时（实测数据）
+    · 内置内核冷启动到能应答约 21 秒（读全盘 MFT + 5 个卷）；
+      外部 Everything 冷启动约 6 秒。因此 ensure() 不会阻塞界面：
+      它跑在启动定时器线程里，顺带每 8 秒重试，最多 3 轮。
+    · 关键坑：Everything 启动期 IPC 窗口已存在但尚未处理消息，此时同步
+      Everything_QueryW 会一直等（实测一次卡 23 秒）。现在探测前先用
+      FindWindowW(EVERYTHING_TASKBAR_NOTIFICATION) 判断有没有实例，
+      再用独立线程 + join(timeout) 兜住「有窗口但不响应」，search() 同样
+      带 6 秒上限 —— 内核卡死也不会拖住搜索线程，最差退回本地索引。
+
+  验证（tests\engine_test.py，21 项）
+    · 释放、私有 ini 内容、SCM 状态、ensure 后真实命中、folder 作用域、
+      stop 不影响外部实例、未授权时明确拒绝而非静默提权、
+      卸装清理不误伤别人的服务。
+
+七F、主题皮肤（1.3 新增）
+
+  数据流：色板 → 生成器 → CSS + JS，界面只消费结果
+    tools\skins.json          十套主题的 8 个令牌（bg / surface / text /
+                              accent / accent-strong / overlay / scheme /
+                              bg-image），来源是主题规范页的原始色板
+        ↓  py -3.14 src/tools/gen_skins.py
+    ui\skin-themes.css        每套主题 22 个界面变量 + 壁纸 + 玻璃层钩子
+    ui\js\skins.js            皮肤清单（名称 / 分类 / 强调色 / 壁纸 / 深浅）
+
+  为什么不让界面直接吃那 8 个令牌
+    界面实际用到 22 个变量：面板三层、分隔线两级、主次弱三档文字、
+    强调与四种交互态、三个语义色、两级阴影、玻璃层、品牌渐变……
+    只有 bg/surface/text/accent 四个是不够的。生成器按固定规则混色推导，
+    保证十套主题的层次关系一致（比如 panel2 永远是「面板向背景色偏一点」），
+    而不是每套手调一遍。推导后逐套核对比度，低于 4.4 直接报错。
+
+  推导规则（浅色主题 / 深色主题）
+    --panel       = surface
+    --panel2/3    浅色：向 bg 混 55% / 95%；深色：向白混 5.5% / 10%
+                  （深色界面越「高」越亮，与浅色相反）
+    --line/line2  浅色：向 text 混 13% / 24%；深色：向白混 10% / 20%
+    --tx/tx2/tx3  = text；次/弱文字按向面板混 30% / 52%
+    --acc         强调色「当文字/图标」用。取 accent-strong；若它太接近灰
+                  （青花那种淡彩，彩度不足），改用色板里的 secondary ——
+                  那是该壁纸的墨色，做强调色反而最像这个主题（青花因此
+                  从 #687887 灰蓝换成 #2C4F87 靛青，对比度 8.15:1）
+    --acc-d       强调色再加深 14%（浅色）/ 提亮 10%（深色），用于 hover
+    --acc-soft/sel/hover   面板与 accent 按 16% / 30% / 7% 混色
+    --danger/ok/warn       按深浅各给一组固定语义色（不跟主题色相跑，避免
+                           「红色主题里成功也是红的」）
+    --shadow      用 text 压黑 50% 当阴影基色，阴影带该主题的色温
+
+  强调色拆成两种用途（1.3 修复）
+    原来 --acc 既当填充又当文字。深色主题的 accent 是浅色（如 #7FA6DC），
+    白字压上去只有 2.2:1。现在：
+      --acc        文字与图标（保证对面板 >= 4.5:1）
+      --acc-fill   填充（按钮、选中态、徽标）
+      --acc-ink    填充上的字色，按「白字 / 深字哪个对比更高」自动选
+    app.css 里 6 处原本写死 color:#fff 的填充点改为 var(--acc-fill/--acc-ink)，
+    都带 var() 回退，所以默认皮肤渲染不变。
+
+  壁纸：本地化 + 裁边（不是柔化）
+    · 原图 2048x1152（每张约 3MB）。界面上直接用原图，缩成 1680x945 WebP，
+      十张背景共 0.9MB；另出 1440x810 缩略图给主题卡片（0.6MB）。都在
+      ui\skins\，随 ui 目录进包，不联网也能用。
+    · 原图左右两侧烧着宣传大字（标题 + 一句 slogan），位置每套都不同
+      （左下 / 右下 / 左中 / 右中）。直接当背景会在侧栏里透出别人的标题。
+    · 1.3 收尾时试过一整套「就地消除」的办法，全部不干净，记在这里免得再走：
+        整图高斯模糊   → 壁纸变成一块纯色，主题就看不出图了（这是最初的问题）
+        区域内模糊     → 羽化带把文字「保护」下来，字号大时字形原样保留
+        缩 1/18 再放大 → 小字能抹掉，100px 的大标题仍留轮廓
+        cv2.inpaint    → 大矩形出现三角伪影
+        镜像补丁       → 云海这类纹理很自然，山水/书法纸面会露对称痕迹
+        自动定位文字   → 云海纹理、星空噪点的高频和文字一样强，测不准
+      最后改成最朴素的办法：裁掉带字的那条边（左或右 30%），再偏上取景
+      裁成 16:9。画面里一个字都没有，也没有修补痕迹，主体反而更聚焦。
+    · 主题卡片也用裁过的版本，保证「看到的缩略图 = 选中的背景」。
+
+  磨砂玻璃（要看得见照片，也要读得清字）
+
+    1.3 在这一块踩了三个坑，按发现顺序记：
+
+    坑一：.lbody 实色
+      只让顶栏/侧栏半透明，内容区还是一整片实色。.pane 已经半透明，但
+      .lbody 还写着 background:var(--panel)，列表那层实色白把玻璃全盖住。
+      改成 background:transparent 后，面板那层才真正起作用。
+
+    坑二：模糊半径
+      一开始给到 26px，真窗口截图里云海直接糊成一块纯色，看起来只是
+      「换个底色」。底图本身有明暗结构，压到 9px 才既保留山脊、又不抢文字。
+
+    坑三（最关键）：.panes 的缝隙底色把整个内容区挡死了
+      app.css 里 .panes 用 background:var(--line) 铺满整个内容区，本意是给
+      窗格之间那 3px 的 gap 垫一条分隔色。它在 body 壁纸之上、.pane 之下，
+      于是内容区永远是 --line 的实色（浅色主题是 rgb(226,228,230)），
+      壁纸根本透不上来 —— 而侧栏在 .panes 之外，所以现象是「只有左侧栏
+      能看见图，右边两窗格一片白」，整张图被切成两半。
+      探针读 computed style 才定位到：#panes 背景 rgb(226,228,230)，而
+      .pane 是 rgba(255,255,255,0.24)。皮肤模式下把 .panes / .tabs / .lhead
+      改为 transparent，缝隙直接透气，整张壁纸才从窗口这头连到那头。
+
+    最终参数（浅色 / 深色）
+      --wall-img  壁纸本体，画在 body::before 上（独立层，见下）
+      --wall-lift filter: brightness(k)，按底图实测亮度自适应，见「提亮」
+      --wall-scrim 蒙层：浅色白 36%→42% 渐变；深色黑 0%→14%
+      --chrome  顶栏/侧栏/状态栏 30% / 24%
+      --pane-bg 内容窗格 44% / 48%
+      backdrop-filter blur(10px)
+      面板不能再薄：原图是「亮云压暗山」的高反差，面板一薄，深色文件名
+      落在山影上就糊了（实测过 24% 与 22% 两版，右窗格文字都读不出来，
+      深色版甚至整片吃掉）。蒙层负责把图调成该有的明暗、面板负责给文字
+      稳定的底，两者配合才既有图又有字。
+      列表文字在模糊后的低频底色上仍然清晰，实测正文对比度 8.98–17.06:1。
+
+  壁纸独立成层 + 不透明度滑杆（1.3 追加）
+    早期壁纸是 body 背景图里的一层（--app-bg: 蒙层, url(...)），
+    想「淡一点」只能改蒙层 alpha —— 结果是图被洗白、越来越糊，
+    这正是「看不到图」的来路。
+    现在拆成 body::before（壁纸）/ body::after（蒙层）两层，
+    界面叠在上面；壁纸层用 opacity: var(--wall-opacity) 控制强度：
+      · 全局变量 --wall-opacity 由 applySkin() 按 cfg.skin_opacity 写入
+      · 皮肤面板里的滑杆（#sk-op，0–100%）拖动即改，不重算颜色、不重排
+      · 只降这一层，图本身仍是清晰的，不会变成一片白雾
+    html 背景设为 --bg，body 背景透明 —— 这样透明度降到 0 时自然落回配色底。
+
+  提亮：按底图实测亮度自适应（不是统一 brightness）
+    深色主题原先把夜景再压暗 12%–30%，星空的平均亮度只有 25/37/56，
+    叠完就是一锅黑（用户原话「背景太昏」）。反过来，深色主题配亮底图
+    （实事求是那张纸，亮度 94）时，薄面板会让浅色文字整片消失。
+    所以两个方向都要能走：
+        dark  目标 66：k = 66 / lum，clamp 0.45–2.0
+        light 目标 175：k = max(1, 175 / lum) —— 只提亮，不压暗（压了发灰）
+    实测系数：星河 1.83、赤诚 1.85、云海 1.39、实事求是 0.70。
+    lum 由 bg_lum() 读 bg-<key>.webp 现算（缩到 40x23 求感知亮度），
+    不能用色板里的 meanLuminance —— 那是裁边前的原图数值。
+
+  深浅归属
+    每套主题自带 scheme（dark-text / light-text）。applyTheme() 优先用皮肤
+    自带的 scheme，只有默认皮肤才读 cfg.theme（light/dark/system）。
+    十套里 5 套深色底、5 套浅色底，不需要 10x2 组合。
+    面板顶部的明暗分段按钮只作用于默认皮肤，点它会明确回到默认皮肤。
+
+  交互
+    顶栏调色板按钮 → modal（720px）→ 11 张卡片（默认 + 10 套），
+    auto-fill 自适应列数。卡片缩略图 = 壁纸 + 用该主题 surface 着色的
+    顶栏/侧栏/三行列表，选中态用该主题的强调色打勾。
+    点击 → S.cfg.skin → applyTheme()（含 applySkin）→ saveState() 节流落盘。
+
+  验证（tests\skin_check.mjs，61 项 + tests\skin_real.py 真窗口）
+    · 11 套逐一切换：断言 dataset.skin、单卡选中、dataset.theme 与该主题
+      scheme 一致、背景图确为 skins/bg-<key>.webp、正文对比度 >= 4.5；
+    · 「显示壁纸」关 → 断言背景不再是图片；开 → 恢复；
+    · 主题态下点深色 → 断言回到 default + dark；恢复默认 → default + light；
+    · 全程监听 pageerror 与 4xx/5xx，要求 0 错误；逐套截图留档。
+    · skin_real.py 直接抓 WebView2 真窗口（Chrome 截图只证明 CSS 对，
+      backdrop-filter 这类合成层必须真机确认）。
+
+============================================================
+
+八、与旧版对照（保留 / 变化）
+
+  保留：多窗格与多标签、Everything 集成、暂存盘、颜色标签、收藏、
+        空格预览、剪贴板互通、后台任务进度、深浅主题、CSV 导出、
+        文件夹对比以外的日常文件操作习惯。
+  变化：单文件 → 分层模块化；两套搜索 → 一条搜索管线；
+        按名称找路径 → 按绝对路径直接打开；固定列 → 自适应列；
+        内嵌 base64 前端 → 独立可维护前端资源；
+        单一配色 → 十套主题（1.3），配色 + 壁纸 + 磨砂玻璃，
+        由色板生成而非手调，变量层覆盖，默认皮肤外观不变。
+  简化：本版未内嵌文本 diff 与文件夹对比模块（旧版使用频率低），
+        如需要可在服务层以独立命令补回，不影响现有架构。
+
+============================================================
+
+九、版本号机制（1.1 起）
+
+  问题：版本号原先散落在标题、exe 名、安装器常量、构建脚本、测试脚本、
+        前端文案里共十几处，每次发版都要逐处改，漏一处就会出现「标题写
+        1.1、文件名还是 1.0」这类不一致。
+
+  做法：单一来源 src/fmp/version.py
+        · APP_VERSION 是唯一需要改的数字
+        · 其余全部派生：APP_TITLE、EXE_NAME、SETUP_NAME、ZIP_NAME、
+          SHORTCUT_NAME、DATA_SERIES、UNINSTALL_KEY
+        · 后端（config / main / server / setup_app / build / build_setup）
+          与测试（selftest / close_test / install_test / release_info）
+          全部从这里导入，不再出现字面量
+        · 前端不写死版本：index.html 用 __FMP_TITLE__ / __FMP_VERSION__ /
+          __FMP_DATA_DIR__ 占位符，由 UIServer 注入；JS 从 meta 读取
+          （api.js 的 APP_META），关于弹窗直接用后端 app.info 的值
+
+  升版流程：
+        py src/tools/bump_version.py --minor      # 1.1 → 1.2
+        py src/tools/bump_version.py --major      # 1.x → 2.0
+        py src/tools/bump_version.py --set 1.3    # 指定
+    工具会改 APP_VERSION、在 更新日志.txt 插入该版本段落骨架，并立刻跑
+    一致性自检：
+        · 更新日志是否有该版本段落
+        · index.html 是否仍用占位符
+        · 全仓是否还有「文件管理多面手 X.Y」式硬编码
+    任一不通过即返回非零退出码。
+
+  两个与版本相关的设计决定：
+    1. 用户数据按主版本归档（v1 / v2），不按次版本。次版本升级共用配置，
+       用户不会因为 1.1 → 1.2 丢收藏和标签；主版本变化时首次启动自动从
+       上一份 config.json 迁移。
+    2. 安装目录固定不带版本号，exe 名带版本号。这样「设置 → 应用」只有
+       一条记录、就地升级不产生多份安装，同时用户仍能从图标名字看出装的
+       是哪个版本。旧版本遗留的 exe / 快捷方式 / 注册表键 / 带版本号的
+       安装目录由安装器在升级时清理。
+
+  发版铁律：每次更新编号必须递增（1.3 起执行）
+    规则：不允许用同一个版本号覆盖已发布的包。改一行代码也算一次更新，
+          下一次交付就是 1.4。
+
+    只靠文档约束容易忘，所以给了机械拦截 —— src/tools/release_guard.py：
+      · 扫描 src 目录（跳过 __pycache__ / output / _build 等），逐文件取
+        sha1 后合成整体指纹，连同版本号写入 _build/release.json
+      · build.py 在打包前对比：版本号没变而指纹变了 → 打印改动的文件清单、
+        返回退出码 3、不产出 exe
+      · 版本号变大、或源码与上次出包完全一致（同版本重打包），正常放行
+      · build.py --allow-same-version 可强行放行，仅供本机验证
+      · bump_version.py --check 会顺带提示「距上次出包已改动 N 个文件」，
+        但只警告、不改变退出码，不打断日常开发
+
+    指纹范围只有 src：改文档、改根目录说明不影响版本判定，避免为了改错
+    别字而被迫升版。_build/release.json 不随交付包发布。
+
+    发版顺序固定为：
+        py src/tools/bump_version.py --minor     # 1.3 → 1.4，并插入日志骨架
+        （补写 更新日志.txt 的新版本段落）
+        py src/build.py                          # 守卫通过才出 exe
+        py src/build_setup.py                    # 打安装器
+        （跑全套回归，打交付包）
